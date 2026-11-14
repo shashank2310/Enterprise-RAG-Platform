@@ -1,0 +1,59 @@
+name: deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target GitHub environment
+        required: true
+        type: choice
+        options: [staging, production]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy-api:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Build and push immutable API image
+        env:
+          ACR_NAME: ${{ vars.ACR_NAME }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          az acr login --name "$ACR_NAME"
+          docker build --tag "$ACR_NAME.azurecr.io/enterprise-rag-api:$IMAGE_TAG" .
+          docker push "$ACR_NAME.azurecr.io/enterprise-rag-api:$IMAGE_TAG"
+          echo "IMAGE=$ACR_NAME.azurecr.io/enterprise-rag-api:$IMAGE_TAG" >> "$GITHUB_ENV"
+      - name: Deploy API revision
+        env:
+          RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          CONTAINER_APP: ${{ vars.CONTAINER_APP_NAME }}
+        run: az containerapp update --resource-group "$RESOURCE_GROUP" --name "$CONTAINER_APP" --image "$IMAGE"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build and publish frontend
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_ENTRA_CLIENT_ID: ${{ vars.VITE_ENTRA_CLIENT_ID }}
+          VITE_ENTRA_TENANT_ID: ${{ vars.VITE_ENTRA_TENANT_ID }}
+          VITE_ENTRA_API_SCOPE: ${{ vars.VITE_ENTRA_API_SCOPE }}
+        run: |
+          npm ci
+          npm run build
+      - name: Upload frontend to private static site origin
+        env:
+          STORAGE_ACCOUNT: ${{ vars.STORAGE_ACCOUNT_NAME }}
+        run: az storage blob upload-batch --auth-mode login --account-name "$STORAGE_ACCOUNT" --destination '$web' --source frontend/dist --overwrite

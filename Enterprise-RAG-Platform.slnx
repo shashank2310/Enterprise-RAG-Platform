@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Enterprise.Rag.Application/Enterprise.Rag.Application.csproj" />
+    <Project Path="src/Enterprise.Rag.Domain/Enterprise.Rag.Domain.csproj" />
+    <Project Path="src/Enterprise.Rag.Infrastructure/Enterprise.Rag.Infrastructure.csproj" />
+  </Folder>
+  <Project Path="Enterprise-RAG-Platform.csproj" />
+</Solution>

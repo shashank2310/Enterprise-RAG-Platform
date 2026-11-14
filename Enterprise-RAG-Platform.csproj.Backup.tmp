@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Enterprise_RAG_Platform</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="src\**\*.cs" />
+    <Compile Include="src\Enterprise.Rag.Application\Ingestion\RecursiveTextChunker.cs" />
+    <Compile Include="src\Enterprise.Rag.Application\RagContracts.cs" />
+    <Compile Include="src\Enterprise.Rag.Domain\Documents\KnowledgeDocument.cs" />
+    <Compile Include="src\Enterprise.Rag.Infrastructure\RagReadiness.cs" />
+    <None Include=".github\workflows\ci.yml" />
+    <None Include=".github\workflows\deploy.yml" />
+    <None Include="src\Enterprise.Rag.Application\Enterprise.Rag.Application.csproj" />
+    <None Include="src\Enterprise.Rag.Domain\Enterprise.Rag.Domain.csproj" />
+    <None Include="src\Enterprise.Rag.Infrastructure\Enterprise.Rag.Infrastructure.csproj" />
+    <ProjectReference Include="src\Enterprise.Rag.Domain\Enterprise.Rag.Domain.csproj" />
+    <ProjectReference Include="src\Enterprise.Rag.Application\Enterprise.Rag.Application.csproj" />
+    <ProjectReference Include="src\Enterprise.Rag.Infrastructure\Enterprise.Rag.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

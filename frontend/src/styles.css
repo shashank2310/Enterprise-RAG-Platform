@@ -1,0 +1,42 @@
+:root { font-family: 'Segoe UI', system-ui, sans-serif; color: #17243b; background: #f5f7fb; font-synthesis: none; text-rendering: optimizeLegibility; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: radial-gradient(ellipse at 50% 20%, #edf3ff 0, #f7f8fb 54%, #f5f7fb 100%); }
+.shell { width: min(1120px, calc(100% - 48px)); margin: 0 auto; }
+.topbar { height: 88px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #e6eaf1; }
+.brand-mark { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: white; font: 800 20px 'Segoe UI', sans-serif; background: linear-gradient(135deg, #4864dc, #7a59d4); box-shadow: 0 7px 18px #5268ce38; }
+.topbar strong, .topbar span { display: block; }
+.topbar strong { font: 700 14px 'Segoe UI', sans-serif; letter-spacing: -.2px; }
+.topbar div:nth-child(2) span { color: #8290a4; font-size: 11px; margin-top: 3px; }
+.topbar .environment { margin-left: auto; color: #66748c; border: 1px solid #dfe5ef; border-radius: 30px; padding: 6px 10px; font-size: 9px; font-weight: 700; letter-spacing: 1px; }
+.hero { text-align: center; padding: 78px 0 43px; }
+.eyebrow { color: #5b69bc; font-size: 10px; font-weight: 700; letter-spacing: 2px; }
+h1 { margin: 18px 0 14px; font: 800 clamp(38px, 5vw, 58px)/1.12 'Segoe UI', sans-serif; letter-spacing: -3px; }
+h1 em { color: #6574cf; font-style: normal; }
+.intro { max-width: 565px; margin: auto; color: #768398; font-size: 14px; line-height: 1.8; }
+.workspace { width: min(760px, 100%); margin: 0 auto; }
+.composer, .answer-card { border: 1px solid #e6eaf2; border-radius: 17px; background: #fff; box-shadow: 0 12px 40px #273a5b0a; }
+.composer { padding: 20px; }
+.composer label { display: block; margin: 0 0 13px; font: 700 13px 'Segoe UI', sans-serif; }
+textarea { width: 100%; resize: vertical; min-height: 88px; padding: 14px; color: #24334b; border: 1px solid #e4e9f1; border-radius: 10px; outline: none; font: 13px/1.6 'Segoe UI', sans-serif; }
+textarea:focus { border-color: #8391df; box-shadow: 0 0 0 3px #7180d51c; }
+.composer-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 13px; }
+.composer-footer span { color: #8793a7; font-size: 10px; }
+button { border: 0; border-radius: 9px; padding: 11px 15px; color: white; background: #5264cb; font: 600 11px 'Segoe UI', sans-serif; cursor: pointer; }
+button:disabled { opacity: .58; cursor: wait; }
+button span { margin-left: 8px; }
+.empty-state { min-height: 175px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #8d99aa; text-align: center; }
+.empty-state p { margin: 8px 0 5px; font-size: 12px; }
+.empty-state small { font-size: 10px; }
+.spark { color: #7381d0; font-size: 22px; }
+.notice { margin-top: 14px; padding: 13px 15px; border-radius: 9px; border: 1px solid #f1d8be; color: #8b5125; background: #fff8f1; font-size: 12px; }
+.answer-card { margin-top: 16px; padding: 20px; }
+.answer-title { display: flex; justify-content: space-between; color: #5b69bc; font-size: 9px; font-weight: 700; letter-spacing: 1px; }
+.answer-title span + span { color: #6b788b; letter-spacing: 0; }
+.answer-card p { color: #34425a; font-size: 13px; line-height: 1.8; }
+.answer-card h2 { margin-top: 20px; font: 700 12px 'Segoe UI', sans-serif; }
+.answer-card ul { padding: 0; list-style: none; }
+.answer-card li { display: flex; justify-content: space-between; border-top: 1px solid #edf0f5; padding: 10px 0; color: #5264cb; font-size: 11px; }
+.answer-card li small { color: #8b96a7; }
+footer { margin: 42px 0 30px; text-align: center; color: #99a3b2; font-size: 10px; }
+footer span { margin: 0 8px; color: #c3cada; }
+@media (max-width: 560px) { .shell { width: calc(100% - 28px); } .hero { padding-top: 55px; } h1 { letter-spacing: -2px; } .composer { padding: 15px; } .composer-footer { align-items: flex-start; flex-direction: column; } }

@@ -1,0 +1,18 @@
+@Enterprise_RAG_Platform_HostAddress = http://localhost:5283
+
+GET {{Enterprise_RAG_Platform_HostAddress}}/health/live
+Accept: application/json
+
+###
+
+GET {{Enterprise_RAG_Platform_HostAddress}}/health/ready
+Accept: application/json
+
+###
+
+POST {{Enterprise_RAG_Platform_HostAddress}}/api/rag/query
+Content-Type: application/json
+
+{
+  "question": "What is the document retention policy?"
+}
