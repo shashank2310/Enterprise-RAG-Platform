@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
 	last_activity_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS chat_messages (p
+CREATE TABLE IF NOT EXISTS chat_messages (
 	id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	tenant_id text NOT NULL,
 	session_id uuid NOT NULL REFERENCES chat_sessions(id) ON DELETE CASCADE,

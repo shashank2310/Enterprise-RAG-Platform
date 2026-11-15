@@ -3,6 +3,7 @@ import { BrowserCacheLocation, PublicClientApplication, type Configuration } fro
 const clientId = import.meta.env.VITE_ENTRA_CLIENT_ID?.trim();
 const tenantId = import.meta.env.VITE_ENTRA_TENANT_ID?.trim();
 export const apiScope = import.meta.env.VITE_ENTRA_API_SCOPE?.trim() ?? '';
+export const localDemoAuth = import.meta.env.VITE_LOCAL_DEMO_AUTH === 'true';
 
 export const authConfigured = Boolean(clientId && tenantId && apiScope);
 

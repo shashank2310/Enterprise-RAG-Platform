@@ -4,7 +4,7 @@ Clean-architecture starter for an enterprise retrieval-augmented generation syst
 
 ## Current status
 
-The API and React frontend include MSAL sign-in, a protected document-upload endpoint, Ollama chat and embedding adapters, and a local PostgreSQL vector-similarity prototype. Configure Entra app roles and download the Ollama chat/embedding models before indexing or querying. The local PostgreSQL retriever scans tenant-scoped embeddings in application memory and is for small development corpora only; production should use a scalable vector index and complete the remaining security, lifecycle, and evaluation work. See [the architecture and implementation blueprint](docs/architecture.md) for current limitations and the delivery plan.
+The API and React frontend include MSAL sign-in, a Development-only local demo identity, document upload, Ollama chat and embedding adapters, and a local PostgreSQL vector-similarity prototype. With the default `LOCAL_DEMO_AUTH=true`, you can test locally without an Entra tenant. The local PostgreSQL retriever scans demo-tenant embeddings in application memory and is for small development corpora only; production requires Entra and a scalable vector index plus the remaining security, lifecycle, and evaluation work. See [the architecture and implementation blueprint](docs/architecture.md) for limitations and the delivery plan.
 
 The code targets .NET 9 per the request. .NET 9 is out of support as of May 12, 2026; move to .NET 10 LTS before production launch.
 
@@ -14,14 +14,17 @@ Prerequisites: .NET 9 SDK, Node.js 22, npm, and Docker Compose.
 
 ```powershell
 Copy-Item .env.example .env
-# Replace POSTGRES_PASSWORD with a unique local password in .env
+# Replace POSTGRES_PASSWORD with a unique local password in .env.
+# Keep LOCAL_DEMO_AUTH=true for testing without Microsoft Entra ID.
+ollama pull qwen3:8b
+ollama pull nomic-embed-text
 docker compose up --build
 ```
 
 - React UI: http://localhost:3000
 - API liveness: http://localhost:5283/health/live
 - API readiness: http://localhost:5283/health/ready (checks PostgreSQL and the configured Ollama models)
-- PostgreSQL: localhost:5432
+- PostgreSQL: internal to Docker Compose (`postgres:5432`; no host port is published by default)
 
 Before using Ollama, download both required models in a separate PowerShell window while Ollama is running:
 
@@ -32,9 +35,9 @@ ollama pull nomic-embed-text
 
 Compose connects the API container to Ollama on the Windows host through `host.docker.internal:11434`. On Windows, if the readiness endpoint says Ollama is unreachable, set the user environment variable `OLLAMA_HOST=0.0.0.0:11434`, quit and restart Ollama, then check `http://localhost:11434/api/tags`. Binding to all interfaces can expose the unauthenticated Ollama API to your network; only do this on a trusted private network and restrict access with Windows Firewall. If you chose a different chat model, set `OLLAMA_CHAT_MODEL` in the root `.env`; set `OLLAMA_EMBEDDING_MODEL` if you use another Ollama embedding model. Rebuild/restart Compose after changing model settings. Keep the same embedding model for all indexed documents; changing it requires re-indexing the documents.
 
-For SPA sign-in, register a single-page application in Microsoft Entra ID with `http://localhost:3000` as a redirect URI. Expose a delegated API scope (for example, `access_as_user`) on the API registration. Define and assign the signed-in user the API's `Rag.Query` and `Rag.Ingest` app roles (or `Rag.Admin`). Set `VITE_ENTRA_CLIENT_ID`, `VITE_ENTRA_TENANT_ID`, and `VITE_ENTRA_API_SCOPE` in the root `.env` before building with Compose. Set `API_ENTRA_TENANT_ID` and `API_ENTRA_CLIENT_ID` in the same file to the API app registration's tenant and client IDs. For Vite development outside Docker, copy `frontend/.env.example` to `frontend/.env.local` and set the SPA values there. These client IDs and scopes are public identifiers, not secrets; never put credentials or secrets in `VITE_*` settings. Register the frontend's deployed origin as a redirect URI for each environment.
+With the default `LOCAL_DEMO_AUTH=true`, no Entra registration or sign-in is needed: the local API supplies a fixed demo user with query and ingest roles, and the UI indicates `LOCAL DEMO`. The demo API, UI, and PostgreSQL host ports bind to `127.0.0.1`; do not change them to public interfaces or use this mode outside local Development. To use real Entra authentication instead, set `LOCAL_DEMO_AUTH=false` and configure the SPA/API app registrations, delegated API scope, `Rag.Query`/`Rag.Ingest` app roles, and the `VITE_*` and `API_ENTRA_*` values below. Register `http://localhost:3000` as an SPA redirect URI. Client IDs and scopes are public identifiers, not secrets; never put credentials in `VITE_*` settings.
 
-The UI has a document upload form. Upload a PDF, DOCX, TXT, or HTML file; the API extracts text, recursively chunks it, generates Ollama embeddings, and stores chunks/vectors in PostgreSQL. PDF extraction still requires Azure AI Document Intelligence; TXT, DOCX, and HTML work locally. Ask questions after indexing; the API embeds each question, compares it with chunks belonging to the caller's Entra tenant, and asks Qwen to answer from the retrieved evidence with validated citations. Confidence remains 0 until a calibrated scoring component is implemented. Upload and query roles are enforced by the API (`Rag.Ingest`/`Rag.Admin` and `Rag.Query`/`Rag.Admin`).
+The UI has a document upload form. Upload a PDF, DOCX, TXT, or HTML file; the API extracts text, recursively chunks it, generates Ollama embeddings, and stores chunks/vectors in PostgreSQL. PDF extraction still requires Azure AI Document Intelligence; TXT, DOCX, and HTML work locally. Ask questions after indexing; the API embeds each question, compares it with chunks belonging to the demo tenant (or the authenticated Entra tenant), and asks Qwen to answer from the retrieved evidence with validated citations. Confidence remains 0 until calibrated scoring is implemented. Local demo mode grants query/ingest roles to its fixed demo identity; Entra mode enforces `Rag.Ingest`/`Rag.Admin` and `Rag.Query`/`Rag.Admin` roles.
 
 To try a small Hugging Face corpus, the Amnesty QA dataset has an English v3 evaluation split with 20 question/context examples and is marked Apache-2.0. Export only its retrieved evidence contexts (not question/reference answers) to a TXT file, then upload that file through the UI:
 
@@ -56,7 +59,7 @@ npm ci
 npm run build
 ```
 
-The local database schema is applied once when the PostgreSQL data volume is initialized. To reapply it from scratch, stop the stack and remove only the named `postgres-data` volume after confirming the local data is disposable.
+The repository's runnable helper scripts are `db/schema.sql` (applied automatically only when PostgreSQL initializes a new volume; manually run with `Get-Content .\db\schema.sql -Raw | docker compose exec -T postgres psql -U rag_app -d enterprise_rag`) and `scripts/export_hf_amnesty_contexts.py` (run with `py scripts\export_hf_amnesty_contexts.py` after installing the Python `datasets` package). The API also applies the local embedding-column schema update at startup. The database schema is designed to be re-applied, but the PostgreSQL RLS statements require the runtime tenant setting for application queries. Avoid deleting the `postgres-data` volume unless you intentionally want to erase the local database.
 
 ## Azure setup
 

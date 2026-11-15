@@ -1,18 +1,18 @@
 import { InteractionRequiredAuthError } from '@azure/msal-browser';
 import { MsalProvider, useMsal } from '@azure/msal-react';
 import { useState, type FormEvent } from 'react';
-import { apiScope, authConfigured, msalInstance } from './authConfig';
+import { apiScope, authConfigured, localDemoAuth, msalInstance } from './authConfig';
 
 type Citation = { documentId: string; fileName: string; pageNumber?: string };
 type Answer = { answer: string; confidence: number; citations: Citation[] };
 type IndexedDocument = { documentId: string; chunkCount: number; fileName: string };
-type WorkspaceProps = { getAccessToken?: () => Promise<string>; accountName?: string; onSignOut?: () => Promise<void> };
+type WorkspaceProps = { getAccessToken?: () => Promise<string>; accountName?: string; onSignOut?: () => Promise<void>; localDemoAuth?: boolean };
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5283';
 
 export default function App() {
   if (!authConfigured || !msalInstance) {
-    return <Workspace />;
+    return <Workspace localDemoAuth={localDemoAuth} />;
   }
 
   return (
@@ -54,7 +54,7 @@ function AuthenticatedWorkspace() {
   return <Workspace getAccessToken={getAccessToken} accountName={account?.username} onSignOut={signOut} />;
 }
 
-function Workspace({ getAccessToken, accountName, onSignOut }: WorkspaceProps) {
+function Workspace({ getAccessToken, accountName, onSignOut, localDemoAuth: isLocalDemo = false }: WorkspaceProps) {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [error, setError] = useState('');
@@ -67,18 +67,19 @@ function Workspace({ getAccessToken, accountName, onSignOut }: WorkspaceProps) {
     event.preventDefault();
     setError('');
     setUploadMessage('');
-    if (!selectedFile || !getAccessToken) {
+    if (!selectedFile || (!getAccessToken && !isLocalDemo)) {
       return;
     }
 
     setUploading(true);
     try {
-      const accessToken = await getAccessToken();
+      const accessToken = getAccessToken ? await getAccessToken() : undefined;
       const formData = new FormData();
       formData.append('file', selectedFile);
+      const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined;
       const response = await fetch(`${apiBaseUrl}/api/documents/upload`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers,
         body: formData,
       });
       if (!response.ok) {
@@ -104,13 +105,15 @@ function Workspace({ getAccessToken, accountName, onSignOut }: WorkspaceProps) {
     setBusy(true);
 
     try {
-      if (!getAccessToken) {
-        throw new Error('Configure the Entra ID SPA client, tenant, and API scope before querying.');
+      if (!getAccessToken && !isLocalDemo) {
+        throw new Error('Configure Entra ID or enable the Development-only local demo mode.');
       }
-      const accessToken = await getAccessToken();
+      const accessToken = getAccessToken ? await getAccessToken() : undefined;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
       const response = await fetch(`${apiBaseUrl}/api/rag/query`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        headers,
         body: JSON.stringify({ question }),
       });
       if (!response.ok) {
@@ -138,7 +141,7 @@ function Workspace({ getAccessToken, accountName, onSignOut }: WorkspaceProps) {
       <header className="topbar">
         <div className="brand-mark">K</div>
         <div><strong>Knowledge Hub</strong><span>Enterprise AI workspace</span></div>
-        <span className="environment">{accountName ?? (authConfigured ? 'SIGN IN REQUIRED' : 'AUTH NOT CONFIGURED')}</span>
+        <span className="environment">{accountName ?? (isLocalDemo ? 'LOCAL DEMO' : authConfigured ? 'SIGN IN REQUIRED' : 'AUTH NOT CONFIGURED')}</span>
         {accountName && <button type="button" onClick={signOut}>Sign out</button>}
       </header>
       <section className="hero">
@@ -151,7 +154,7 @@ function Workspace({ getAccessToken, accountName, onSignOut }: WorkspaceProps) {
           <label htmlFor="document-file">Add a knowledge document</label>
           <div className="upload-row">
             <input id="document-file" type="file" accept=".pdf,.docx,.txt,.html,.htm" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} />
-            <button type="submit" disabled={uploading || !selectedFile || !getAccessToken}>{uploading ? 'Indexing…' : 'Upload & index'}</button>
+            <button type="submit" disabled={uploading || !selectedFile || (!getAccessToken && !isLocalDemo)}>{uploading ? 'Indexing…' : 'Upload & index'}</button>
           </div>
           <small>TXT, DOCX, and HTML are supported locally. PDF requires Azure Document Intelligence.</small>
           {uploadMessage && <p className="upload-message" role="status">{uploadMessage}</p>}
@@ -161,12 +164,12 @@ function Workspace({ getAccessToken, accountName, onSignOut }: WorkspaceProps) {
           <textarea id="question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask a question about your organization's knowledge..." rows={3} required />
           <div className="composer-footer">
             <span>Answers are grounded in permitted sources.</span>
-            <button type="submit" disabled={busy || !question.trim() || !getAccessToken}>{busy ? 'Searching…' : 'Ask question'} <span aria-hidden="true">↗</span></button>
+            <button type="submit" disabled={busy || !question.trim() || (!getAccessToken && !isLocalDemo)}>{busy ? 'Searching…' : 'Ask question'} <span aria-hidden="true">↗</span></button>
           </div>
         </form>
         {error && <div className="notice" role="alert">{error}</div>}
         {answer && <article className="answer-card"><div className="answer-title"><span>RESPONSE</span><span>Evidence confidence: {Math.round(answer.confidence * 100)}%</span></div><p>{answer.answer}</p><h2>Sources</h2><ul>{answer.citations.map((citation) => <li key={`${citation.documentId}-${citation.pageNumber}`}><span>{citation.fileName}</span>{citation.pageNumber && <small>Page {citation.pageNumber}</small>}</li>)}</ul></article>}
-        {!answer && !error && <div className="empty-state"><span className="spark">✳</span><p>{getAccessToken ? 'Your answers and source citations will appear here.' : 'Configure Entra ID to enable sign-in and queries.'}</p><small>{getAccessToken ? 'Upload documents above, then ask questions grounded in your indexed content.' : 'Set the public SPA client ID, tenant ID, and API scope in the Vite environment.'}</small></div>}
+        {!answer && !error && <div className="empty-state"><span className="spark">✳</span><p>{getAccessToken || isLocalDemo ? 'Your answers and source citations will appear here.' : 'Configure Entra ID to enable sign-in and queries.'}</p><small>{getAccessToken || isLocalDemo ? 'Upload documents above, then ask questions grounded in your indexed content.' : 'Set the public SPA client ID, tenant ID, and API scope in the Vite environment.'}</small></div>}
       </section>
       <footer>Private by design <span>•</span> Citations first <span>•</span> Human-verifiable answers</footer>
     </main>
