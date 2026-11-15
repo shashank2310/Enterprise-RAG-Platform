@@ -156,7 +156,7 @@ function Workspace({ getAccessToken, accountName, onSignOut, localDemoAuth: isLo
             <input id="document-file" type="file" accept=".pdf,.docx,.txt,.html,.htm" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} />
             <button type="submit" disabled={uploading || !selectedFile || (!getAccessToken && !isLocalDemo)}>{uploading ? 'Indexing…' : 'Upload & index'}</button>
           </div>
-          <small>TXT, DOCX, and HTML are supported locally. PDF requires Azure Document Intelligence.</small>
+          <small>TXT, DOCX, HTML, and text-based PDFs work locally. Scanned PDFs require Azure Document Intelligence for OCR.</small>
           {uploadMessage && <p className="upload-message" role="status">{uploadMessage}</p>}
         </form>
         <form className="composer" onSubmit={submit}>

@@ -6,6 +6,7 @@ using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Enterprise.Rag.Application;
 using HtmlAgilityPack;
+using UglyToad.PdfPig;
 
 namespace Enterprise.Rag.Infrastructure.Ingestion;
 
@@ -52,13 +53,34 @@ public sealed class DocumentTextExtractor(DocumentIntelligenceClient? documentIn
 
     private async Task<string> ExtractPdfAsync(Stream content, CancellationToken cancellationToken)
     {
-        if (documentIntelligenceClient is null)
+        await using var buffer = new MemoryStream();
+        await content.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
+        buffer.Position = 0;
+
+        string extractedText;
+        using (var document = PdfDocument.Open(buffer))
         {
-            throw new RagNotConfiguredException("PDF extraction requires an Azure AI Document Intelligence endpoint.");
+            extractedText = string.Join(
+                Environment.NewLine,
+                document.GetPages()
+                    .Where(page => !string.IsNullOrWhiteSpace(page.Text))
+                    .Select(page => $"[[PAGE:{page.Number}]]\n{page.Text}"));
         }
 
+        if (!string.IsNullOrWhiteSpace(extractedText))
+        {
+            return extractedText;
+        }
+
+        if (documentIntelligenceClient is null)
+        {
+            throw new RagNotConfiguredException(
+                "This PDF has no selectable text. Scanned or image-only PDFs require Azure AI Document Intelligence for OCR.");
+        }
+
+        buffer.Position = 0;
         var operation = await documentIntelligenceClient
-            .AnalyzeDocumentAsync(WaitUntil.Completed, "prebuilt-layout", BinaryData.FromStream(content), cancellationToken)
+            .AnalyzeDocumentAsync(WaitUntil.Completed, "prebuilt-layout", BinaryData.FromStream(buffer), cancellationToken)
             .ConfigureAwait(false);
 
         var pages = operation.Value.Pages;
