@@ -31,7 +31,12 @@ public interface IRagReadiness
 
 public interface IRagOrchestrator
 {
-    Task<RagAnswer> QueryAsync(RagQuery query, RagSecurityContext securityContext, CancellationToken cancellationToken);
+    Task<RagAnswer> QueryAsync(
+        RagQuery query,
+        RagSecurityContext securityContext,
+        CancellationToken cancellationToken,
+        Func<string, CancellationToken, ValueTask>? onProgress = null,
+        Func<string, CancellationToken, ValueTask>? onToken = null);
 }
 
 public interface IDocumentTextExtractor
@@ -101,7 +106,11 @@ public interface IContextFilter
 
 public interface IGroundedAnswerGenerator
 {
-    Task<RagAnswer> GenerateAsync(string query, IReadOnlyList<RetrievedChunk> context, CancellationToken cancellationToken);
+    Task<RagAnswer> GenerateAsync(
+        string query,
+        IReadOnlyList<RetrievedChunk> context,
+        CancellationToken cancellationToken,
+        Func<string, CancellationToken, ValueTask>? onToken = null);
 }
 
 public interface IRagEvaluator

@@ -21,6 +21,11 @@ h1 em { color: #6574cf; font-style: normal; }
 .upload-row input { min-width: 0; color: #66748c; font: 11px 'Segoe UI', sans-serif; }
 .upload-form small, .upload-message { display: block; margin: 10px 0 0; color: #8793a7; font-size: 10px; }
 .upload-message { color: #42634d; }
+.upload-results { display: grid; gap: 7px; margin: 12px 0 0; padding: 0; list-style: none; }
+.upload-results li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 14px; padding: 9px 10px; border-radius: 8px; font-size: 10px; }
+.upload-results strong { overflow-wrap: anywhere; }
+.upload-success { color: #286044; background: #edf8f1; }
+.upload-failure { color: #8b5125; background: #fff3e8; }
 .composer { padding: 20px; }
 .composer label { display: block; margin: 0 0 13px; font: 700 13px 'Segoe UI', sans-serif; }
 textarea { width: 100%; resize: vertical; min-height: 88px; padding: 14px; color: #24334b; border: 1px solid #e4e9f1; border-radius: 10px; outline: none; font: 13px/1.6 'Segoe UI', sans-serif; }
@@ -35,6 +40,11 @@ button span { margin-left: 8px; }
 .empty-state small { font-size: 10px; }
 .spark { color: #7381d0; font-size: 22px; }
 .notice { margin-top: 14px; padding: 13px 15px; border-radius: 9px; border: 1px solid #f1d8be; color: #8b5125; background: #fff8f1; font-size: 12px; }
+.progress-card { display: flex; align-items: flex-start; gap: 13px; margin-top: 16px; padding: 17px 19px; border: 1px solid #dfe6f2; border-radius: 13px; color: #34425a; background: linear-gradient(120deg, #fff, #f8faff); box-shadow: 0 10px 28px #273a5b0a; }
+.progress-card strong { display: block; color: #5264cb; font-size: 12px; }
+.progress-card p { margin: 8px 0 0; color: #65738a; font-size: 12px; line-height: 1.65; white-space: pre-wrap; }
+.progress-spinner { flex: 0 0 19px; width: 19px; height: 19px; margin-top: 1px; border: 2px solid #dfe5f4; border-top-color: #5264cb; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .answer-card { margin-top: 16px; padding: 20px; }
 .answer-title { display: flex; justify-content: space-between; color: #5b69bc; font-size: 9px; font-weight: 700; letter-spacing: 1px; }
 .answer-title span + span { color: #6b788b; letter-spacing: 0; }
@@ -45,4 +55,4 @@ button span { margin-left: 8px; }
 .answer-card li small { color: #8b96a7; }
 footer { margin: 42px 0 30px; text-align: center; color: #99a3b2; font-size: 10px; }
 footer span { margin: 0 8px; color: #c3cada; }
-@media (max-width: 560px) { .shell { width: calc(100% - 28px); } .hero { padding-top: 55px; } h1 { letter-spacing: -2px; } .composer { padding: 15px; } .composer-footer { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 560px) { .shell { width: calc(100% - 28px); } .hero { padding-top: 55px; } h1 { letter-spacing: -2px; } .composer { padding: 15px; } .composer-footer { align-items: flex-start; flex-direction: column; } .upload-row { align-items: stretch; flex-direction: column; } .upload-row input { width: 100%; } }

@@ -278,7 +278,7 @@ def make_deck():
     text(s, 1.1, 2.9, 5.4, 2.8, code, 15, WHITE, False, font="Consolas")
     card(s, 7.15, 2.15, 5.35, 1.1, "1  Start Ollama", "Keep Ollama running on the host machine.", TEAL, WHITE, 13, 10)
     card(s, 7.15, 3.49, 5.35, 1.1, "2  Launch the stack", "Compose starts API, PostgreSQL, and React frontend.", CYAN, WHITE, 13, 10)
-    card(s, 7.15, 4.83, 5.35, 1.1, "3  Upload + ask", "Open localhost:3000; readiness: localhost:5283/health/ready.", LIME, WHITE, 13, 10)
+    card(s, 7.15, 4.83, 5.35, 1.1, "3  Upload + stream", "Select multiple files; watch per-file indexing and live answer progress.", LIME, WHITE, 13, 10)
     text(s, 0.84, 6.35, 11.3, 0.3, "The API reaches host Ollama at host.docker.internal:11434; on Windows, follow the README firewall guidance if it cannot connect.", 10, MUTED)
     footer(s, 8)
 

@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Enterprise.Rag.Application;
@@ -20,7 +21,8 @@ public sealed class OllamaGroundedAnswerGenerator(
     public async Task<RagAnswer> GenerateAsync(
         string query,
         IReadOnlyList<RetrievedChunk> context,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<string, CancellationToken, ValueTask>? onToken = null)
     {
         if (context.Count == 0)
         {
@@ -42,22 +44,32 @@ public sealed class OllamaGroundedAnswerGenerator(
             {evidence}
             """;
 
-        using var response = await httpClient.PostAsJsonAsync(
-            "api/chat",
-            new ChatRequest(
-                model,
-                [new ChatMessage("system", systemMessage), new ChatMessage("user", query)],
-                false,
-                false,
-                new ChatOptions(256)),
-            JsonOptions,
-            cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
+        var chatRequest = new ChatRequest(
+            model,
+            [new ChatMessage("system", systemMessage), new ChatMessage("user", query)],
+            onToken is not null,
+            false,
+            new ChatOptions(256),
+            "10m");
+        string responseText;
+        if (onToken is null)
+        {
+            using var response = await httpClient.PostAsJsonAsync(
+                "api/chat",
+                chatRequest,
+                JsonOptions,
+                cancellationToken).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
 
-        var result = await response.Content.ReadFromJsonAsync<ChatResponse>(JsonOptions, cancellationToken)
-            .ConfigureAwait(false)
-            ?? throw new InvalidOperationException("Ollama returned an empty chat response.");
-        var responseText = result.Message.Content?.Trim();
+            var result = await response.Content.ReadFromJsonAsync<ChatResponse>(JsonOptions, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new InvalidOperationException("Ollama returned an empty chat response.");
+            responseText = result.Message.Content?.Trim() ?? string.Empty;
+        }
+        else
+        {
+            responseText = await StreamAnswerAsync(chatRequest, onToken, cancellationToken).ConfigureAwait(false);
+        }
         if (string.IsNullOrWhiteSpace(responseText))
         {
             logger.LogWarning("Ollama returned an empty answer; returning an abstention.");
@@ -96,8 +108,58 @@ public sealed class OllamaGroundedAnswerGenerator(
         return new RagAnswer(safeAnswer, citations, 0);
     }
 
-    private sealed record ChatRequest(string Model, IReadOnlyList<ChatMessage> Messages, bool Stream, bool Think, ChatOptions Options);
+    private async Task<string> StreamAnswerAsync(
+        ChatRequest chatRequest,
+        Func<string, CancellationToken, ValueTask> onToken,
+        CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "api/chat")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(chatRequest, JsonOptions), Encoding.UTF8, "application/json")
+        };
+        using var response = await httpClient.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+
+        await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        using var reader = new StreamReader(responseStream, Encoding.UTF8);
+        var answer = new StringBuilder();
+        while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
+
+            var update = JsonSerializer.Deserialize<ChatStreamResponse>(line, JsonOptions)
+                ?? throw new InvalidOperationException("Ollama returned an empty streamed chat update.");
+            var token = update.Message?.Content;
+            if (!string.IsNullOrEmpty(token))
+            {
+                answer.Append(token);
+                await onToken(token, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (update.Done)
+            {
+                break;
+            }
+        }
+
+        return answer.ToString().Trim();
+    }
+
+    private sealed record ChatRequest(
+        string Model,
+        IReadOnlyList<ChatMessage> Messages,
+        bool Stream,
+        bool Think,
+        ChatOptions Options,
+        [property: System.Text.Json.Serialization.JsonPropertyName("keep_alive")] string KeepAlive);
     private sealed record ChatOptions([property: System.Text.Json.Serialization.JsonPropertyName("num_predict")] int NumPredict);
     private sealed record ChatMessage(string Role, string Content);
     private sealed record ChatResponse(ChatMessage Message);
+    private sealed record ChatStreamResponse(ChatMessage? Message, bool Done);
 }

@@ -66,4 +66,5 @@ public sealed class DocumentsController(IDocumentIngestionService ingestionServi
                 statusCode: StatusCodes.Status503ServiceUnavailable);
         }
     }
+
 }

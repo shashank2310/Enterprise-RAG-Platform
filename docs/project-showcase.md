@@ -9,7 +9,7 @@ A portfolio-ready, local-first retrieval-augmented generation prototype that dem
 | Area | Implemented in the local demo |
 |---|---|
 | API | .NET 9 / ASP.NET Core, controller boundaries, dependency injection |
-| Web app | React, TypeScript, Vite; document upload and question-answer workspace |
+| Web app | React, TypeScript, Vite; sequential multi-file upload with per-file status and a streaming question-answer workspace |
 | Ingestion | TXT, HTML, DOCX, and selectable-text PDF extraction; 20 MB service limit |
 | Chunking | Recursive text chunking with overlap |
 | Models | Ollama chat and embeddings; configurable model names (for example Qwen 3 1.7B and `nomic-embed-text`) |
@@ -43,12 +43,12 @@ The local retrieval implementation loads the current tenant's candidate embeddin
 
 ## Ingestion and answer lifecycle
 
-1. The user uploads an allowed file through the SPA.
+1. The user selects up to five files in the SPA. The client uploads and indexes them sequentially, showing per-file progress and keeping later files running if one upload fails.
 2. The API validates the extension and size, computes a content hash, and extracts readable text. HTML script/style content is removed. Text-based PDFs use PdfPig; OCR is an optional Azure path for image-only PDFs.
 3. Extracted content is recursively chunked (1,200 target characters with 180 characters overlap), then embedded in batches using Ollama.
 4. A PostgreSQL transaction saves document metadata, chunks, and embeddings under the current tenant context. Re-uploading identical content for that tenant updates the indexed document.
 5. For a question, the API generates one query embedding, calculates cosine similarity against indexed tenant chunks, and selects up to the configured top-K (default 8, maximum 20).
-6. The chat model receives the question and retrieved evidence. Returned source labels are mapped only to retrieved chunk IDs; if the model omits citation syntax, the API attaches the highest-ranked retrieved chunk as a source instead of discarding the answer.
+6. The chat model receives the question and retrieved evidence. The API streams retrieval/generation status and answer tokens to the browser. Returned source labels are mapped only to retrieved chunk IDs; if the model omits citation syntax, the API attaches the highest-ranked retrieved chunk as a source instead of discarding the answer.
 
 The response confidence value is currently a placeholder (0), not a calibrated probability. Citations show which retrieved passages were used; they do not guarantee that the model interpreted every condition correctly.
 

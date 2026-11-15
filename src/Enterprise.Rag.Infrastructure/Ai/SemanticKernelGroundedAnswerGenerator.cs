@@ -12,7 +12,8 @@ public sealed class SemanticKernelGroundedAnswerGenerator(IChatCompletionService
     public async Task<RagAnswer> GenerateAsync(
         string query,
         IReadOnlyList<RetrievedChunk> context,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<string, CancellationToken, ValueTask>? onToken = null)
     {
         if (context.Count == 0)
         {
@@ -42,6 +43,11 @@ public sealed class SemanticKernelGroundedAnswerGenerator(IChatCompletionService
         if (string.IsNullOrWhiteSpace(responseText))
         {
             return new RagAnswer(Abstention, [], 0);
+        }
+
+        if (onToken is not null)
+        {
+            await onToken(responseText, cancellationToken).ConfigureAwait(false);
         }
 
         var chunksById = context.ToDictionary(item => item.Chunk.Id, StringComparer.Ordinal);

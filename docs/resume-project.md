@@ -6,7 +6,7 @@ Use the wording that matches the role and your own contribution. Keep the protot
 
 **Enterprise RAG Platform | .NET 9, React, PostgreSQL, Ollama, Docker**
 
-- Built a full-stack local RAG prototype with a React/TypeScript workspace and ASP.NET Core API for document upload, ingestion, retrieval, and evidence-cited question answering.
+- Built a full-stack local RAG prototype with a React/TypeScript workspace and ASP.NET Core API for multi-document ingestion, retrieval, and evidence-cited question answering; added per-file upload progress and streamed answer/status updates.
 - Implemented TXT, HTML, DOCX, and text-based PDF extraction, recursive overlapping chunking, Ollama embeddings, tenant-context-aware PostgreSQL persistence, and cosine-similarity top-K retrieval.
 - Added evidence-conditioned Qwen generation with server-side mapping of model source labels to retrieved chunk IDs and a top-ranked source fallback when the model omits citation syntax.
 - Added development-only local authentication, Entra/MSAL integration paths, API role policies, Docker Compose orchestration, readiness checks, and synthetic cross-format RAG validation documents.
