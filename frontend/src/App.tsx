@@ -5,6 +5,7 @@ import { apiScope, authConfigured, msalInstance } from './authConfig';
 
 type Citation = { documentId: string; fileName: string; pageNumber?: string };
 type Answer = { answer: string; confidence: number; citations: Citation[] };
+type IndexedDocument = { documentId: string; chunkCount: number; fileName: string };
 type WorkspaceProps = { getAccessToken?: () => Promise<string>; accountName?: string; onSignOut?: () => Promise<void> };
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5283';
@@ -58,6 +59,43 @@ function Workspace({ getAccessToken, accountName, onSignOut }: WorkspaceProps) {
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
+
+  async function uploadDocument(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    setUploadMessage('');
+    if (!selectedFile || !getAccessToken) {
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const accessToken = await getAccessToken();
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      const response = await fetch(`${apiBaseUrl}/api/documents/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: formData,
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => undefined);
+        throw new Error(body?.detail ?? `Upload failed (${response.status}).`);
+      }
+      const indexed = (await response.json()) as IndexedDocument;
+      setUploadMessage(`Indexed ${indexed.fileName} into ${indexed.chunkCount} chunks.`);
+      setSelectedFile(null);
+      const input = document.getElementById('document-file') as HTMLInputElement | null;
+      if (input) input.value = '';
+    } catch (reason) {
+      setUploadMessage(reason instanceof Error ? reason.message : 'The document could not be indexed.');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -109,6 +147,15 @@ function Workspace({ getAccessToken, accountName, onSignOut }: WorkspaceProps) {
         <p className="intro">Ask a question across your approved company documents. Responses include citations and evidence confidence when the API is configured.</p>
       </section>
       <section className="workspace" aria-label="Knowledge assistant">
+        <form className="upload-form" onSubmit={uploadDocument}>
+          <label htmlFor="document-file">Add a knowledge document</label>
+          <div className="upload-row">
+            <input id="document-file" type="file" accept=".pdf,.docx,.txt,.html,.htm" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} />
+            <button type="submit" disabled={uploading || !selectedFile || !getAccessToken}>{uploading ? 'Indexing…' : 'Upload & index'}</button>
+          </div>
+          <small>TXT, DOCX, and HTML are supported locally. PDF requires Azure Document Intelligence.</small>
+          {uploadMessage && <p className="upload-message" role="status">{uploadMessage}</p>}
+        </form>
         <form className="composer" onSubmit={submit}>
           <label htmlFor="question">What would you like to know?</label>
           <textarea id="question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask a question about your organization's knowledge..." rows={3} required />
@@ -119,7 +166,7 @@ function Workspace({ getAccessToken, accountName, onSignOut }: WorkspaceProps) {
         </form>
         {error && <div className="notice" role="alert">{error}</div>}
         {answer && <article className="answer-card"><div className="answer-title"><span>RESPONSE</span><span>Evidence confidence: {Math.round(answer.confidence * 100)}%</span></div><p>{answer.answer}</p><h2>Sources</h2><ul>{answer.citations.map((citation) => <li key={`${citation.documentId}-${citation.pageNumber}`}><span>{citation.fileName}</span>{citation.pageNumber && <small>Page {citation.pageNumber}</small>}</li>)}</ul></article>}
-        {!answer && !error && <div className="empty-state"><span className="spark">✳</span><p>{getAccessToken ? 'Your answers and source citations will appear here.' : 'Configure Entra ID to enable sign-in and queries.'}</p><small>{getAccessToken ? 'The protected API returns HTTP 503 until orchestration and tenant data adapters are enabled.' : 'Set the public SPA client ID, tenant ID, and API scope in the Vite environment.'}</small></div>}
+        {!answer && !error && <div className="empty-state"><span className="spark">✳</span><p>{getAccessToken ? 'Your answers and source citations will appear here.' : 'Configure Entra ID to enable sign-in and queries.'}</p><small>{getAccessToken ? 'Upload documents above, then ask questions grounded in your indexed content.' : 'Set the public SPA client ID, tenant ID, and API scope in the Vite environment.'}</small></div>}
       </section>
       <footer>Private by design <span>•</span> Citations first <span>•</span> Human-verifiable answers</footer>
     </main>

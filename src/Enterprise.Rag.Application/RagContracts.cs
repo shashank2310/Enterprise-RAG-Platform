@@ -26,7 +26,7 @@ public sealed record ReadinessResult(bool IsReady, IReadOnlyList<string> Missing
 
 public interface IRagReadiness
 {
-    ReadinessResult Check();
+    Task<ReadinessResult> CheckAsync(CancellationToken cancellationToken);
 }
 
 public interface IRagOrchestrator
@@ -56,6 +56,27 @@ public interface IDocumentMetadataEnricher
 public interface IEmbeddingGenerator
 {
     Task<IReadOnlyList<ReadOnlyMemory<float>>> GenerateAsync(IReadOnlyList<string> texts, CancellationToken cancellationToken);
+}
+
+public sealed record DocumentIndexResult(Guid DocumentId, int ChunkCount, string FileName);
+
+public interface IDocumentIngestionService
+{
+    Task<DocumentIndexResult> IndexAsync(
+        Stream content,
+        string fileName,
+        string contentType,
+        RagSecurityContext securityContext,
+        CancellationToken cancellationToken);
+}
+
+public interface IDocumentIndexStore
+{
+    Task<Guid> SaveAsync(
+        KnowledgeDocument document,
+        IReadOnlyList<DocumentChunk> chunks,
+        IReadOnlyList<ReadOnlyMemory<float>> embeddings,
+        CancellationToken cancellationToken);
 }
 
 public interface IHybridRetriever

@@ -1,3 +1,4 @@
+using Enterprise.Rag.Application;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,11 +7,11 @@ namespace Enterprise_RAG_Platform.Controllers;
 [ApiController]
 [Authorize(Policy = "Rag.Query")]
 [Route("api/rag")]
-public sealed class RagController : ControllerBase
+public sealed class RagController(IRagOrchestrator orchestrator) : ControllerBase
 {
     [HttpPost("query")]
-    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
-    public IActionResult Query([FromBody] QueryRequest request)
+    [ProducesResponseType<RagAnswer>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Query([FromBody] QueryRequest request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Question))
         {
@@ -21,10 +22,16 @@ public sealed class RagController : ControllerBase
             });
         }
 
-        return Problem(
-            title: "RAG query orchestration is not configured.",
-            detail: "Entra ID validates the bearer token and app role, but the end-to-end query, tenant persistence, and index lifecycle are not enabled in this starter.",
-            statusCode: StatusCodes.Status503ServiceUnavailable);
+        var securityContext = RagSecurityContextFactory.FromClaimsPrincipal(User);
+        if (securityContext is null)
+        {
+            return Unauthorized();
+        }
+
+        var answer = await orchestrator
+            .QueryAsync(new RagQuery(request.Question.Trim()), securityContext, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(answer);
     }
 
     public sealed record QueryRequest(string Question);

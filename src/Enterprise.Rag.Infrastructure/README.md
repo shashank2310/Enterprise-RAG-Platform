@@ -1,3 +1,5 @@
 # Infrastructure adapters
 
-This project intentionally contains no cloud SDK implementation yet. Add the provider adapters here, behind the Application ports, after provisioning the resources listed in `docs/architecture.md`. Keep credentials out of configuration files; production workloads should use managed identity and Key Vault references. Update `RagReadiness` only when real dependency checks are implemented.
+This project contains Ollama chat and embedding adapters, Azure OpenAI and Azure AI Search adapters, document text extraction, and a local PostgreSQL chunk/embedding index. The Ollama/PostgreSQL path is intended for small local development corpora: embeddings are stored as JSONB and compared in application memory within the authenticated tenant's RLS-scoped transaction. It is not a scalable production vector index.
+
+The local upload path stores extracted chunks and embeddings, not the original file. TXT, DOCX, and HTML extraction are local; PDF requires Azure AI Document Intelligence. Production still needs durable source-file storage, malware/signature validation, background ingestion, scalable vector search, group ACL enforcement, and the remaining evaluation/observability work. Keep secrets out of configuration and browser builds; production workloads should use managed identity and a secrets manager.

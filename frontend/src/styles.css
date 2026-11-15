@@ -14,7 +14,13 @@ h1 { margin: 18px 0 14px; font: 800 clamp(38px, 5vw, 58px)/1.12 'Segoe UI', sans
 h1 em { color: #6574cf; font-style: normal; }
 .intro { max-width: 565px; margin: auto; color: #768398; font-size: 14px; line-height: 1.8; }
 .workspace { width: min(760px, 100%); margin: 0 auto; }
-.composer, .answer-card { border: 1px solid #e6eaf2; border-radius: 17px; background: #fff; box-shadow: 0 12px 40px #273a5b0a; }
+.composer, .answer-card, .upload-form { border: 1px solid #e6eaf2; border-radius: 17px; background: #fff; box-shadow: 0 12px 40px #273a5b0a; }
+.upload-form { margin-bottom: 14px; padding: 18px 20px; }
+.upload-form label { display: block; margin-bottom: 10px; font: 700 13px 'Segoe UI', sans-serif; }
+.upload-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.upload-row input { min-width: 0; color: #66748c; font: 11px 'Segoe UI', sans-serif; }
+.upload-form small, .upload-message { display: block; margin: 10px 0 0; color: #8793a7; font-size: 10px; }
+.upload-message { color: #42634d; }
 .composer { padding: 20px; }
 .composer label { display: block; margin: 0 0 13px; font: 700 13px 'Segoe UI', sans-serif; }
 textarea { width: 100%; resize: vertical; min-height: 88px; padding: 14px; color: #24334b; border: 1px solid #e4e9f1; border-radius: 10px; outline: none; font: 13px/1.6 'Segoe UI', sans-serif; }

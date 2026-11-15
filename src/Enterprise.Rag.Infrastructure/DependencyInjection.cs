@@ -4,6 +4,7 @@ using Azure.Messaging.ServiceBus;
 using Azure.Search.Documents;
 using Azure.Storage.Blobs;
 using Enterprise.Rag.Application;
+using Enterprise.Rag.Application.Ingestion;
 using Enterprise.Rag.Infrastructure.Ai;
 using Enterprise.Rag.Infrastructure.Ingestion;
 using Enterprise.Rag.Infrastructure.Search;
@@ -21,14 +22,28 @@ public static class DependencyInjection
     public static IServiceCollection AddRagInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IRagReadiness, RagReadiness>();
+        services.AddSingleton<IDocumentChunker, RecursiveTextChunker>();
         services.AddSingleton<IDocumentTextExtractor>(serviceProvider =>
             new DocumentTextExtractor(serviceProvider.GetService<DocumentIntelligenceClient>()));
+
+        var ragProvider = configuration["Rag:Provider"] ?? "Ollama";
+        var ollamaBaseUrl = configuration["Ollama:BaseUrl"] ?? "http://localhost:11434";
+        var useLocalPostgresIndex = bool.TryParse(configuration["Rag:EnableLocalPostgresIndex"], out var localIndexEnabled) && localIndexEnabled;
+        var postgresConnectionString = configuration.GetConnectionString("Postgres");
+
+        if (string.Equals(ragProvider, "Ollama", StringComparison.OrdinalIgnoreCase))
+        {
+            var ollamaUri = GetServiceBaseUri(ollamaBaseUrl);
+            services.AddHttpClient<IEmbeddingGenerator, OllamaEmbeddingGenerator>(client => client.BaseAddress = ollamaUri);
+            services.AddHttpClient<IGroundedAnswerGenerator, OllamaGroundedAnswerGenerator>(client => client.BaseAddress = ollamaUri);
+        }
 
         var azureOpenAiEndpoint = configuration["AzureOpenAI:Endpoint"];
         var chatDeployment = configuration["AzureOpenAI:ChatDeployment"];
         var embeddingDeployment = configuration["AzureOpenAI:EmbeddingDeployment"];
 
-        if (!string.IsNullOrWhiteSpace(azureOpenAiEndpoint)
+        if (string.Equals(ragProvider, "AzureOpenAI", StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(azureOpenAiEndpoint)
             && !string.IsNullOrWhiteSpace(chatDeployment)
             && !string.IsNullOrWhiteSpace(embeddingDeployment))
         {
@@ -54,7 +69,9 @@ public static class DependencyInjection
         if (!string.IsNullOrWhiteSpace(searchEndpoint) && !string.IsNullOrWhiteSpace(searchIndex))
         {
             services.AddSingleton(new SearchClient(new Uri(searchEndpoint), searchIndex, new DefaultAzureCredential()));
-            if (!string.IsNullOrWhiteSpace(azureOpenAiEndpoint) && !string.IsNullOrWhiteSpace(embeddingDeployment))
+            if (string.Equals(ragProvider, "AzureOpenAI", StringComparison.OrdinalIgnoreCase)
+                && !string.IsNullOrWhiteSpace(azureOpenAiEndpoint)
+                && !string.IsNullOrWhiteSpace(embeddingDeployment))
             {
                 services.AddScoped<IHybridRetriever, AzureAiSearchHybridRetriever>();
             }
@@ -78,12 +95,25 @@ public static class DependencyInjection
             services.AddSingleton(new ServiceBusClient(serviceBusNamespace, new DefaultAzureCredential()));
         }
 
-        var postgresConnectionString = configuration.GetConnectionString("Postgres");
         if (!string.IsNullOrWhiteSpace(postgresConnectionString))
         {
             services.AddSingleton(NpgsqlDataSource.Create(postgresConnectionString));
+            if (useLocalPostgresIndex && string.Equals(ragProvider, "Ollama", StringComparison.OrdinalIgnoreCase))
+            {
+                services.AddSingleton<IDocumentIndexStore, PostgresDocumentIndexStore>();
+                services.AddScoped<IHybridRetriever, PostgresVectorRetriever>();
+                services.AddScoped<IDocumentIngestionService, DocumentIngestionService>();
+                services.AddScoped<IRagOrchestrator, RagOrchestrator>();
+                services.AddHostedService<DatabaseSchemaInitializer>();
+            }
         }
 
         return services;
+    }
+
+    private static Uri GetServiceBaseUri(string baseUrl)
+    {
+        var normalized = baseUrl.EndsWith("/", StringComparison.Ordinal) ? baseUrl : $"{baseUrl}/";
+        return new Uri(normalized, UriKind.Absolute);
     }
 }

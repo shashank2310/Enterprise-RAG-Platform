@@ -3,4 +3,5 @@
 frontend/node_modules/
 frontend/dist/
 .env
+samples/amnesty_qa_contexts.txt
 .vs/

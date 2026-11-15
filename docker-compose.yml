@@ -6,6 +6,13 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=enterprise_rag;Username=rag_app;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your shell}
+      AzureAd__TenantId: ${API_ENTRA_TENANT_ID:-organizations}
+      AzureAd__ClientId: ${API_ENTRA_CLIENT_ID:-00000000-0000-0000-0000-000000000000}
+      Rag__Provider: Ollama
+      Rag__EnableLocalPostgresIndex: "true"
+      Ollama__BaseUrl: http://host.docker.internal:11434
+      Ollama__ChatModel: ${OLLAMA_CHAT_MODEL:-qwen3:8b}
+      Ollama__EmbeddingModel: ${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text}
     ports:
       - "5283:8080"
     depends_on:
