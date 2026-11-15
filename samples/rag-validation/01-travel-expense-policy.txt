@@ -1,0 +1,40 @@
+AURORA FIELD SERVICES
+TRAVEL AND EXPENSE POLICY
+Version: 3.2 | Effective: 1 October 2026 | Policy owner: Finance Operations
+Document type: Internal policy (synthetic sample for RAG testing)
+
+1. PURPOSE AND SCOPE
+This policy explains how Aurora Field Services employees request business travel, book transportation and lodging, and submit expenses. It applies to employees and fixed-term contractors traveling on approved company business. It does not apply to customer-billed subcontractors, whose contract terms take precedence. A manager may approve an exception only in writing before the expense is incurred. Finance Operations may reject expenses that do not include the required evidence.
+
+The goals are to keep employees safe, control costs, and make reimbursement predictable. Employees should choose a reasonable option that meets the business need; the lowest price is not automatically the right choice if it creates a safety, accessibility, or material scheduling problem. Travelers are responsible for understanding local laws and keeping receipts. A booking confirmation is not a substitute for an itemized receipt when this policy requires one.
+
+2. APPROVALS BEFORE BOOKING
+A traveler must submit a travel request in the internal portal before making a non-refundable booking. The request must state the business purpose, destination, dates, cost estimate, project code, and any accessibility or safety needs. The employee's direct manager approves domestic trips. The department director approves international trips and any trip expected to cost more than USD 3,000. If both conditions apply, both approvals are required. The request is considered approved only after all required approvers have recorded approval in the portal.
+
+Travelers should submit domestic requests at least five business days before departure and international requests at least fifteen business days before departure. These are planning targets, not automatic approvals. Urgent work may require a shorter notice period, but the normal approval chain still applies. An employee must not split one trip into multiple requests to avoid an approval threshold. A change that increases the estimate by more than 10 percent, adds an overnight stay, or changes the destination requires updated approval before the additional commitment is made.
+
+3. TRANSPORTATION
+Use the company booking portal when the requested itinerary is available there. Economy class is the standard for flights shorter than six hours of scheduled flight time. Premium economy may be booked for a single flight segment scheduled at six hours or longer when the total fare is no more than 1.5 times the lowest reasonable economy fare available at the time of booking. Business class is not reimbursable under the standard policy. A director may grant a documented exception for a medical accommodation or a customer contract requirement; the exception must identify the traveler, route, dates, and reason.
+
+Rail is preferred over air when the total rail journey is no more than four hours and does not create an overnight absence. A traveler may use a personal vehicle when it is cheaper than an available rental or when equipment makes it necessary. The current reimbursement rate for a personal vehicle is USD 0.67 per mile, effective 1 October 2026. Mileage is measured from the employee's normal work location or home, whichever is shorter for the business route. Normal commuting mileage is never reimbursed. Parking and tolls are reimbursed with receipts; traffic fines and parking penalties are not.
+
+Rental vehicles should be compact or midsize unless passenger count, weather, accessibility, or equipment requires a different class. Refuel the rental before return when it is safe and practical. Optional rental upgrades, satellite radio, and prepaid fuel plans are not reimbursable without a written exception. Travelers must follow local licensing requirements and may not allow an unapproved driver to operate the vehicle.
+
+4. LODGING AND MEALS
+Book a standard single-occupancy room at a business-appropriate property. The lodging target is USD 220 per night before taxes in standard-cost cities and USD 320 per night before taxes in high-cost cities. Finance Operations maintains the high-cost city list in the portal. These amounts are review thresholds, not guarantees: a traveler must choose a reasonably priced safe property near the work location. A room above the applicable target requires manager approval before booking; above USD 400 per night also requires director approval. Resort fees, minibar purchases, in-room movies, and personal spa services are not reimbursable.
+
+For domestic travel, employees may claim actual meal costs up to USD 75 per full travel day, including tax and tip. The cap is USD 40 for a departure or return day that includes fewer than eight hours away from home. International meal costs are reimbursed at actual cost up to the destination's published daily rate in the portal. Alcohol is not reimbursable. When a meal is provided by a conference, customer, or hotel, the employee must not claim that meal again. A receipt is required for any single meal costing more than USD 25.
+
+Reasonable non-alcoholic tips are allowed within the relevant meal or transportation limit. A tip above 20 percent requires a brief explanation. Laundry may be claimed for trips lasting five consecutive nights or more, up to USD 35 per trip. Personal purchases, companion travel, pet fees, and childcare are excluded.
+
+5. SUBMISSION AND REIMBURSEMENT
+Submit an expense report in the portal within 30 calendar days after the trip ends. Each line must include a business description, transaction date, amount and currency, expense category, project code, and receipt when required. For a lost receipt, the employee must complete the lost-receipt declaration and explain why the original cannot be obtained. A declaration is not accepted for an individual expense over USD 75 without Finance Operations approval.
+
+The manager should review a complete report within five business days. Finance Operations performs a policy review after manager approval and normally processes a compliant report within ten business days. Reimbursement timing begins when both reviews are complete, not on the date the traveler first submits an incomplete report. Reports submitted more than 60 calendar days after the trip may be denied unless the department director documents an exceptional reason.
+
+Use the exchange rate shown by the card issuer for card purchases. For cash expenses, use the daily rate published by the company's finance system for the transaction date and attach the rate evidence. Do not convert an expense using a personal bank's monthly average. Reimbursements are paid in the employee's payroll currency.
+
+6. EXAMPLES AND INTERPRETATION
+Example A: A domestic trip estimate of USD 2,700 requires direct-manager approval. It does not require director approval solely because of cost. Example B: An international trip estimated at USD 2,700 requires department-director approval because it is international. Example C: An international trip estimated at USD 3,400 requires both direct-manager and department-director approval because it is international and exceeds USD 3,000. Example D: A five-night trip with a USD 310 hotel rate in a standard-cost city is above the USD 220 target and needs manager approval before booking, even if the total trip estimate is below USD 3,000.
+
+If this policy conflicts with applicable law, the law controls. Questions about interpretation should be sent to Finance Operations before booking or submitting the expense. Finance Operations may update city classifications and portal instructions, but it may not waive the approval requirements in this policy without a written exception from the designated approver.

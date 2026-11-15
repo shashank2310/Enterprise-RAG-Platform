@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Aurora Field Services Customer Support Playbook</title>
+  <style>body { font-family: sans-serif; } .internal-note { display: none; }</style>
+</head>
+<body>
+  <article>
+    <header>
+      <h1>Aurora Field Services Customer Support Playbook</h1>
+      <p>Version 2.6 | Effective 20 October 2026 | Owner: Customer Experience</p>
+      <p>Fictional operational guide created as a synthetic RAG validation sample.</p>
+    </header>
+
+    <section>
+      <h2>1. Service hours and response targets</h2>
+      <p>The standard support desk is staffed Monday through Friday, 08:00 to 18:00 in the customer's local time zone, excluding published company holidays. A customer with an active Priority Care agreement may contact the emergency line at any time. A support ticket is acknowledged when the system sends a ticket number and confirmation email; an automated acknowledgment is not the same as a human diagnosis or resolution.</p>
+      <p>For a Priority 1 outage affecting all users at a customer site, the target for a human first response is 30 minutes during staffed hours and 60 minutes outside staffed hours for Priority Care customers. For Priority 2 degradation affecting a critical workflow but with a workaround available, the target is four staffed hours. For Priority 3 questions or individual-user issues, the target is one business day. These are response targets, not resolution guarantees. The ticket owner should update the customer at least once every four staffed hours for Priority 1 and once each business day for Priority 2 and Priority 3.</p>
+    </section>
+
+    <section>
+      <h2>2. Severity classification</h2>
+      <p>Priority 1 means a production service is unavailable for all or most users at one or more customer sites, and no reasonable workaround exists. Priority 2 means a key capability is materially degraded, a subset of users is affected, or a workaround exists but creates significant operational burden. Priority 3 covers how-to questions, cosmetic defects, requests for information, and issues affecting a single user when the core service remains available.</p>
+      <p>Customers may suggest a priority, but the support engineer confirms it using impact and workaround evidence. A request to change priority must include the number of affected users, affected locations, business process, start time, and workaround. Do not classify a ticket as Priority 1 solely because the requester is a senior executive. Reassess severity when impact changes, and record the reason for every increase or decrease.</p>
+    </section>
+
+    <section>
+      <h2>3. Information required in a ticket</h2>
+      <p>Ask for the customer's organization name, affected site, approximate start time with time zone, affected users or devices, a short description of the expected and actual behavior, the exact error text, and steps to reproduce. Request a correlation ID or request ID when one is displayed. Screenshots should exclude passwords, access tokens, personal records, and unrelated customer data. A customer should never email a password or a one-time authentication code to support.</p>
+      <p>For an intermittent problem, record at least two occurrence times and ask whether all users share the same network or device type. For a file-import problem, ask for file type, approximate file size, and whether the file opens in the source application. Do not ask a customer to send sensitive source content through an ordinary email channel. Use the approved secure upload mechanism when a sanitized sample is genuinely necessary.</p>
+    </section>
+
+    <section>
+      <h2>4. Escalation and communications</h2>
+      <p>Escalate a Priority 1 outage immediately to the on-call engineer and the incident commander. The incident commander owns the status cadence, assigns technical work, and approves customer-facing incident updates. The ticket owner remains responsible for ensuring that the customer receives those updates. For a Priority 2 issue with no progress after one business day, ask the team lead to review the next action and customer impact. For Priority 3 requests that need product review, link the ticket to the product backlog and tell the customer that prioritization is not a delivery commitment.</p>
+      <p>Customer-facing messages should state what is known, what is not yet known, the next action, and when the next update will arrive. Do not speculate about root cause or promise a restoration time without confirmation from the incident commander. If a status update is delayed, send a brief note that work is continuing and provide a new update time. Close a ticket only after the customer confirms resolution or after two documented follow-up attempts over five business days with no response.</p>
+    </section>
+
+    <section>
+      <h2>5. Common troubleshooting paths</h2>
+      <h3>Sign-in problems</h3>
+      <p>Confirm the user is accessing the correct environment and tenant, check the displayed time and error code, and ask whether another authorized user can sign in. Do not ask the user to share credentials. If the error indicates a missing role or consent, route the case to the customer's identity administrator with the correlation ID and the required application name. Support staff must not grant themselves or the customer additional permissions as a shortcut.</p>
+      <h3>Slow or incomplete search results</h3>
+      <p>Ask whether the document was successfully indexed and whether the expected content can be found using a distinctive exact phrase. Confirm the document is not a scanned image without OCR, and verify that the user is querying the same tenant or collection in which the document was indexed. If exact-phrase search works but a paraphrased question does not, capture both queries and compare their results. Do not claim that a fluent generated answer is evidence that the underlying document was indexed correctly.</p>
+      <h3>Upload or indexing errors</h3>
+      <p>Record the filename extension, approximate size, upload time, and exact error. Test a known-good small text file only when the customer approves a test upload. A text-based PDF may be extracted locally, but a scanned PDF requires an OCR capability. If a DOCX or PDF fails while a TXT file succeeds, preserve the error and escalate it as a format-specific parsing issue. Re-uploading an unchanged corrupt file is unlikely to resolve a deterministic parser failure.</p>
+    </section>
+
+    <section>
+      <h2>6. Examples for consistent triage</h2>
+      <p>Example A: One user cannot sign in, while colleagues at the same site can. Start at Priority 3 unless evidence shows a broader critical workflow impact. Collect the error code and route a missing-role issue to the identity administrator.</p>
+      <p>Example B: Every user at a site is unable to access the production search service and there is no workaround. Treat it as a candidate Priority 1, contact the on-call engineer, and provide the incident commander with site, user count, start time, and correlation IDs.</p>
+      <p>Example C: Search is slow for several users, but a cached export allows the customer to complete today's work. This is generally Priority 2, subject to confirmation of business impact. State that the four staffed-hour target applies to the first response, not a guaranteed fix.</p>
+      <p>Example D: A customer asks when a requested export feature will ship. Link the request to product review, explain that backlog prioritization is not a delivery commitment, and do not invent a release date.</p>
+    </section>
+
+    <section>
+      <h2>7. Privacy and quality controls</h2>
+      <p>Collect only information needed to diagnose the issue. Restrict ticket access to staff with a business need, follow the retention schedule, and use approved secure transfer for diagnostic files. Redact personal data from screenshots and logs where possible. If a customer reports a suspected security incident or accidental data disclosure, stop routine troubleshooting and notify the security response channel immediately. Do not investigate by copying data to a personal device or an unapproved AI tool.</p>
+      <p>Before sending a final response, verify that it answers the customer's question, distinguishes confirmed facts from hypotheses, and includes any required next step. For policy or contractual questions, cite the controlling source or route the question to the responsible owner rather than interpreting it from memory. Ticket notes should be factual and respectful because they may be reviewed by the customer or an auditor.</p>
+    </section>
+  </article>
+  <script>document.body.dataset.sampleOnly = "not part of extracted document content";</script>
+</body>
+</html>

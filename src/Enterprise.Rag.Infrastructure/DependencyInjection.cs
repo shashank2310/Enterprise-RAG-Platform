@@ -35,7 +35,11 @@ public static class DependencyInjection
         {
             var ollamaUri = GetServiceBaseUri(ollamaBaseUrl);
             services.AddHttpClient<IEmbeddingGenerator, OllamaEmbeddingGenerator>(client => client.BaseAddress = ollamaUri);
-            services.AddHttpClient<IGroundedAnswerGenerator, OllamaGroundedAnswerGenerator>(client => client.BaseAddress = ollamaUri);
+            services.AddHttpClient<IGroundedAnswerGenerator, OllamaGroundedAnswerGenerator>(client =>
+            {
+                client.BaseAddress = ollamaUri;
+                client.Timeout = TimeSpan.FromMinutes(3);
+            });
         }
 
         var azureOpenAiEndpoint = configuration["AzureOpenAI:Endpoint"];

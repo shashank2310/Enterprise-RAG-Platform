@@ -2,9 +2,9 @@
 
 ## Scope and implementation status
 
-This repository contains the .NET 9 API shell, Domain/Application/Infrastructure project boundaries, Entra JWT validation with `Rag.Query`/`Rag.Admin` authorization, configurable managed-identity Azure clients, Semantic Kernel embedding/grounded-generation adapters, Azure AI Search hybrid retrieval, TXT/HTML/DOCX/PDF extraction adapters, a recursive text chunker, a React UI starter, PostgreSQL schema, and container/workflow scaffolding. The query endpoint still returns HTTP 503 after authorization: the end-to-end orchestrator, upload workflow, tenant-scoped persistence, index lifecycle, semantic chunker, evaluation engine, and live cloud resources are not wired. `/health/live` is the liveness probe; `/health/ready` deliberately reports unavailable until those remaining components exist.
+This repository contains a runnable local RAG path with .NET 9 API layers, React/TypeScript UI, Development-only demo identity, Entra JWT and role-policy integration paths, TXT/HTML/DOCX/text-based PDF extraction, recursive chunking, Ollama chat and embedding adapters, PostgreSQL chunk/JSONB-embedding persistence, tenant-context-scoped cosine-similarity retrieval, grounded responses with retrieved-chunk citation validation, health endpoints, and Docker Compose scaffolding. Azure OpenAI/Semantic Kernel and Azure AI Search adapters are present, but Azure is not provisioned or validated as a complete deployment here. The local PostgreSQL retriever scans vectors in application memory for small development corpora; production-scale indexing, semantic chunking, query rewriting, reranking, calibrated confidence, a scored evaluation engine, and production security/operations remain roadmap work. The `/health/ready` endpoint checks dependencies configured for the current local path.
 
-**Runtime target:** the code targets .NET 9 because that was requested. .NET 9 support ended on May 12, 2026; for a production launch on the current date, move to .NET 10 LTS before exposing the service publicly. The .NET 9 target is retained here to match the stated constraint.
+**Runtime target:** the code targets .NET 9 because that was requested. .NET 9 support ended on May 12, 2026; move to .NET 10 LTS before production use or exposing the service publicly. The .NET 9 target is retained to match the original project constraint.
 
 ## Architecture diagram
 
@@ -55,7 +55,7 @@ flowchart LR
 ├── src/
 │   ├── Enterprise.Rag.Domain/           # Entities and domain invariants
 │   ├── Enterprise.Rag.Application/      # Use-case ports, contracts, chunking policy
-│   └── Enterprise.Rag.Infrastructure/   # Azure/Postgres adapters (to be implemented)
+│   └── Enterprise.Rag.Infrastructure/   # Local Ollama/Postgres and Azure integration adapters
 ├── frontend/                            # React + TypeScript SPA
 ├── db/schema.sql                        # PostgreSQL DDL and tenant RLS policies
 ├── docs/architecture.md                 # Diagrams, schema, rollout and security design
@@ -176,7 +176,7 @@ Suggested environments: separate subscriptions or resource groups for dev/test/p
 2. Provision dev/test Azure resources with private networking, managed identities, Key Vault, Entra app roles, PostgreSQL, Blob, Service Bus, Search, Azure OpenAI chat/embedding deployments, and Monitor.
 3. Review the pinned package references for Semantic Kernel/Azure OpenAI, Azure AI Search, Azure Identity, Blob Storage, Service Bus, Npgsql, Microsoft.Identity.Web, Azure Monitor OpenTelemetry, Document Intelligence, OpenXML, and HTML parsing; keep dependency auditing enabled and refresh versions through package manager.
 4. Complete tenant claim mapping, RLS-aware PostgreSQL transactions, and authorization tests before production use. Query requires `Rag.Query`/`Rag.Admin`; upload requires `Rag.Ingest`/`Rag.Admin`; the SPA needs real app registration, delegated scope, roles, audience, and CORS configuration.
-5. The local prototype supports synchronous upload/indexing for DOCX, TXT, and HTML (PDF requires Document Intelligence), recursive chunking, Ollama embeddings, tenant-scoped PostgreSQL persistence, nearest-vector retrieval, and grounded Qwen answers. Add malware scanning, signature validation, richer page/heading metadata, semantic chunking, background jobs, status/retry/dead-letter handling, and production vector search before relying on it beyond small development corpora.
+5. The local prototype supports synchronous upload/indexing for DOCX, TXT, HTML, and selectable-text PDF (scanned/image-only PDF OCR requires Azure Document Intelligence), recursive chunking, Ollama embeddings, tenant-context-scoped PostgreSQL persistence, in-memory cosine-similarity retrieval, and grounded Qwen answers with citation-marker validation. Add malware scanning, signature validation, richer metadata, semantic chunking, background jobs, status/retry/dead-letter handling, and production-scale vector search before relying on it beyond small development corpora.
 6. Define and version Search index schema, embedding generation, ACL fields, indexer/upsert/delete adapters, hybrid/vector/keyword search, semantic ranking, rewrite/expansion, reranking, and context filtering.
 7. Implement Semantic Kernel grounded generation, server-side citation resolution, abstention, calibrated confidence, token/cost ledger, and conversation persistence.
 8. Create a versioned labeled evaluation dataset; implement all five evaluator metrics and block releases when agreed thresholds regress.

@@ -28,10 +28,20 @@ public sealed class RagController(IRagOrchestrator orchestrator) : ControllerBas
             return Unauthorized();
         }
 
-        var answer = await orchestrator
-            .QueryAsync(new RagQuery(request.Question.Trim()), securityContext, cancellationToken)
-            .ConfigureAwait(false);
-        return Ok(answer);
+        try
+        {
+            var answer = await orchestrator
+                .QueryAsync(new RagQuery(request.Question.Trim()), securityContext, cancellationToken)
+                .ConfigureAwait(false);
+            return Ok(answer);
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return Problem(
+                title: "The answer-generation request timed out.",
+                detail: "The local model did not respond before the timeout. Try again, or use a smaller/faster chat model.",
+                statusCode: StatusCodes.Status504GatewayTimeout);
+        }
     }
 
     public sealed record QueryRequest(string Question);

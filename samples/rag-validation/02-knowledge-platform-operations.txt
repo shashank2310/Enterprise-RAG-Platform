@@ -1,0 +1,42 @@
+AURORA FIELD SERVICES
+KNOWLEDGE PLATFORM OPERATIONS HANDBOOK
+Version: 1.4 | Effective: 15 September 2026 | Owner: Platform Reliability
+Document type: Operations runbook (synthetic sample for RAG testing)
+
+1. SERVICE OVERVIEW
+The Aurora Knowledge Platform accepts approved reference documents, extracts their text, divides the text into overlapping chunks, generates vector embeddings, and stores the chunks for question answering. The local demonstration deployment uses the API, PostgreSQL, and an Ollama-compatible model endpoint. Production deployments may use managed Azure services. The interface and sequence of work are similar, but service names and limits differ by environment. Operators must confirm the environment banner before changing configuration.
+
+The system has four separately observable stages: upload validation, text extraction, chunk and embedding generation, and persistence/indexing. A request can succeed at upload validation and still fail later. A successful response from the upload endpoint means the synchronous ingestion workflow completed, not merely that the file was copied. The current local prototype stores extracted chunks and embeddings in PostgreSQL and performs a small-corpus similarity scan in application memory. It is not sized for a large production corpus.
+
+2. DOCUMENT ACCEPTANCE
+The local demonstration accepts TXT, HTML, DOCX, and PDF files. TXT is decoded as UTF-8. HTML scripts, styles, and noscript content are removed before visible text is extracted. DOCX paragraphs are read from the document body. Text-based PDFs are read locally and page markers are retained when text is available. A scanned or image-only PDF has no selectable text and requires an OCR service such as Azure AI Document Intelligence. The absence of an OCR endpoint should not block an ordinary text-based PDF.
+
+Before uploading, use a clear filename, confirm that the document contains no secrets or unapproved personal information, and check that the content is readable. Unsupported extensions are rejected. A corrupt file may fail during extraction. A PDF that opens in a viewer can still be image-only; copy a sentence from the PDF into a text editor to check whether selectable text exists. If no text can be selected, request OCR configuration or provide an approved text export instead of repeatedly retrying the same file.
+
+The synchronous demo is intended for small files and small collections. If a valid file repeatedly fails, record its extension, approximate size, environment, request time, and the complete error message. Do not include document contents in an incident report unless the data owner has approved sharing them. Operators must not use a production document in the local demo without explicit authorization.
+
+3. INGESTION WORKFLOW AND TROUBLESHOOTING
+Step 1: Confirm PostgreSQL is healthy and the API can reach it. In Docker Compose, the API connects to the database using the Compose service hostname, not localhost. A host-side port conflict on 5432 does not necessarily mean the API container cannot reach PostgreSQL. Do not publish the database port to all network interfaces just to make the app connect.
+
+Step 2: Confirm the model service is running and both configured model names exist. The chat model answers questions; the embedding model creates document and query vectors. Changing the embedding model after ingestion can make old and new vectors incompatible. When switching embedding model families or dimensions, use a clean test corpus or perform a planned re-embedding; do not assume old vectors remain comparable.
+
+Step 3: Upload one small known-good TXT file before testing a large PDF or DOCX. If it indexes, test one file of each supported type. This separates service connectivity from parser behavior. If every upload fails before extraction, inspect API readiness and database logs. If only one format fails, inspect the extraction error and the file itself. If upload succeeds but queries return no evidence, check whether ingestion completed, whether the same demo identity and tenant are used, and whether the question includes terms or facts actually present in the document.
+
+Step 4: Avoid repeated retries for deterministic parsing failures. A retry is appropriate after transient model unavailability or database restart. A corrupt file, unsupported format, or image-only PDF without OCR will fail consistently until the input or configuration changes. Preserve the original error in the ticket; do not replace it with a generic statement such as “the AI is broken.”
+
+4. CHUNKING AND SEARCH EXPECTATIONS
+The recursive chunker attempts to keep related text together and splits long content into smaller pieces. Chunk boundaries may occur within a section, so include headings, names, and key terms near the relevant paragraph. The local PostgreSQL retriever compares the query vector with stored chunk vectors and returns the nearest evidence available to the current tenant. It is a useful functional demonstration, not a benchmark of a managed search service.
+
+A narrow question about an exact number or date should usually be easier than a question that combines rules across multiple sections. Ask a single-fact question first, then a multi-part question. If a correct fact is not retrieved, try a query using a distinctive phrase from the source. If that works but a paraphrase does not, the issue may be semantic retrieval quality, model behavior, or chunk coverage rather than extraction.
+
+The answer generator is instructed to stay grounded in retrieved evidence and cite source chunks. A citation proves which retrieved passage was used; it does not prove that the passage is correct or current. Verify high-impact answers against the source document. The confidence field in this prototype is not a calibrated probability and may remain zero. Do not interpret it as a guaranteed likelihood of correctness.
+
+5. QUERY VALIDATION CHECKLIST
+For each test document, record the question, expected answer, answer returned, citation, and whether the cited text supports the claim. Use direct evidence questions, paraphrases, cross-section questions, and questions whose answer is absent. A good system should admit when evidence is missing rather than invent a policy. Include negative questions such as “What is the approved premium-economy allowance for flights under five hours?” when the document states no such allowance; the answer should explain that the policy only specifies a threshold for flights of six hours or longer.
+
+A useful manual test set includes: exact amounts and deadlines; comparisons between two requirements; a scenario requiring an approval chain; a question linking a configuration prerequisite to a symptom; and an unanswerable question. Avoid grading only on fluent wording. Check numerical accuracy, conditions, exceptions, and citations. If the answer says “always” where the source says “normally,” count that as a material error.
+
+6. OPERATIONAL GUARDRAILS
+The local demo identity is only for development on the local machine. Never expose it to a shared network or use it to authorize real employee data. Do not place API keys or passwords in frontend variables, source files, screenshots, or sample documents. Do not disable authorization checks to work around an upload failure. Keep the PostgreSQL data volume when restarting containers unless intentionally resetting test data.
+
+For a clean validation run, upload the provided sample documents under their original distinct filenames. Ask the supplied test questions from the sample README. To test repeatability, note the selected model names and avoid changing them between indexing and querying. When deleting and re-indexing sample data, use the application's supported document management path if available; restarting a container alone may leave indexed chunks in PostgreSQL.
