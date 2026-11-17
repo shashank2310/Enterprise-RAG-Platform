@@ -146,7 +146,7 @@ def make_deck():
     pill(s, 0.82, 0.82, 2.15, "LOCAL-FIRST  /  EVIDENCE-GROUNDED", TEAL, NAVY, 9)
     text(s, 0.82, 1.55, 7.3, 1.5, "Enterprise RAG\nPlatform", 38, WHITE, True)
     text(s, 0.86, 3.4, 6.7, 0.8, "Grounded answers.\nTraceable evidence.", 22, "D5E1F0", False)
-    text(s, 0.86, 5.55, 6.8, 0.35, ".NET 9  |  React + TypeScript  |  PostgreSQL  |  Ollama", 12, CYAN, True)
+    text(s, 0.86, 5.55, 7.4, 0.35, ".NET 9 prototype  |  React + TypeScript  |  PostgreSQL  |  Ollama", 11, CYAN, True)
     text(s, 0.86, 6.15, 7.8, 0.25, "github.com/shashank2310/Enterprise-RAG-Platform", 10, "A9B8CB")
     # Floating evidence cards
     rect(s, 8.75, 1.28, 3.25, 0.78, WHITE)
@@ -189,7 +189,7 @@ def make_deck():
     s = new_slide(prs, True)
     text(s, 0.72, 0.42, 11.9, 0.24, "03 / SYSTEM ARCHITECTURE", 10, TEAL, True)
     text(s, 0.72, 0.8, 12, 0.55, "One request path. Two model calls. One evidence store.", 25, WHITE, True)
-    text(s, 0.74, 1.44, 11.9, 0.4, "Local Compose topology; Azure integrations are adapter paths, not a live cloud deployment.", 12, "B8C6D9")
+    text(s, 0.74, 1.44, 11.9, 0.4, "The API mediates model and database calls; Azure adapters are not a live cloud deployment.", 12, "B8C6D9")
     # user and UI
     rect(s, 0.78, 2.36, 2.15, 1.0, "203850", True, "36516D")
     text(s, 0.98, 2.56, 1.75, 0.28, "REACT SPA", 12, CYAN, True, align=PP_ALIGN.CENTER)
@@ -300,15 +300,15 @@ def make_deck():
 
     # 10. Engineering tradeoffs
     s = new_slide(prs)
-    header(s, "09 / Engineering tradeoffs", "A prototype with explicit boundaries", "Good architecture is not only the target design; it is a clear account of what is real today.")
-    cols = [(0.8, "Choice", "Local model provider", "Ollama keeps the demo usable without an OpenAI API key.", TEAL),
-            (4.78, "Choice", "PostgreSQL at small scale", "One local datastore for metadata, chunks, and embeddings; simple to run and inspect.", CYAN),
-            (8.76, "Boundary", "Do not oversell", "In-memory vector scoring is a prototype, not a scalable search architecture.", ORANGE)]
+    header(s, "09 / Integration paths", "Adapters are building blocks—not a deployed service", "The next step is to complete the secure write path, identity, and operations around the existing integrations.")
+    cols = [(0.8, "Models", "Azure OpenAI", "Chat and embedding adapters use DefaultAzureCredential. Finish Azure-provider service wiring, deployment setup, and vector-dimension checks.", TEAL),
+            (4.78, "Retrieval", "Azure AI Search", "A tenant/group-filtered query adapter exists. Add index schema, chunk upsert/delete, ACL metadata, reindexing, and end-to-end tests.", CYAN),
+            (8.76, "Ingestion", "Blob + Service Bus", "SDK clients can be registered but are not used by upload. Build private source storage, a durable worker, retries, and dead-letter handling.", ORANGE)]
     for x, label, title, body, accent in cols:
         pill(s, x, 2.15, 1.05, label.upper(), SOFT_TEAL if accent == TEAL else SOFT_BLUE if accent == CYAN else SOFT_ORANGE, INK, 8)
-        card(s, x, 2.62, 3.72, 2.12, title, body, accent, WHITE, 15, 11)
+        card(s, x, 2.62, 3.72, 2.12, title, body, accent, WHITE, 15, 10)
     rect(s, 0.8, 5.15, 11.7, 0.9, NAVY, True)
-    text(s, 1.1, 5.38, 11.1, 0.42, "Azure OpenAI + Semantic Kernel and Azure AI Search adapters exist; a complete Azure environment is not deployed.", 13, WHITE, True, valign=MSO_ANCHOR.MIDDLE)
+    text(s, 1.1, 5.38, 11.1, 0.42, "OCR, Entra/MSAL, and Azure Monitor also have integration paths. No cloud resources or complete Azure runtime are provisioned here.", 12, WHITE, True, valign=MSO_ANCHOR.MIDDLE)
     footer(s, 10)
 
     # 11. Roadmap
@@ -338,7 +338,7 @@ def make_deck():
     rect(s, 0.8, 2.2, 7.3, 3.45, NAVY, True)
     text(s, 1.16, 2.54, 6.45, 0.32, "PROJECT TAKEAWAY", 10, TEAL, True)
     text(s, 1.16, 3.02, 6.45, 1.24, "Full-stack local RAG prototype with document ingestion, vector retrieval, grounded generation, and verifiable citations.", 23, WHITE, True)
-    text(s, 1.16, 4.72, 6.4, 0.48, ".NET 9  /  React  /  PostgreSQL  /  Ollama  /  Docker", 12, CYAN, True)
+    text(s, 1.16, 4.72, 6.4, 0.48, ".NET 9 prototype  /  React  /  PostgreSQL  /  Ollama  /  Docker", 11, CYAN, True)
     card(s, 8.48, 2.2, 4.0, 1.35, "GitHub repository", "github.com/shashank2310/Enterprise-RAG-Platform", TEAL, WHITE, 14, 10)
     card(s, 8.48, 3.87, 4.0, 1.35, "Demo corpus", "samples/rag-validation/", CYAN, WHITE, 14, 11)
     text(s, 8.55, 5.62, 3.85, 0.4, "See the README for setup;\nsee project-showcase.md for details.", 10, MUTED)

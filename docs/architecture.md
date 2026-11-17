@@ -2,17 +2,48 @@
 
 ## Scope and implementation status
 
-This repository contains a runnable local RAG path with .NET 9 API layers, React/TypeScript UI, Development-only demo identity, Entra JWT and role-policy integration paths, TXT/HTML/DOCX/text-based PDF extraction, recursive chunking, Ollama chat and embedding adapters, PostgreSQL chunk/JSONB-embedding persistence, tenant-context-scoped cosine-similarity retrieval, grounded responses with retrieved-chunk citation validation, health endpoints, and Docker Compose scaffolding. Azure OpenAI/Semantic Kernel and Azure AI Search adapters are present, but Azure is not provisioned or validated as a complete deployment here. The local PostgreSQL retriever scans vectors in application memory for small development corpora; production-scale indexing, semantic chunking, query rewriting, reranking, calibrated confidence, a scored evaluation engine, and production security/operations remain roadmap work. The `/health/ready` endpoint checks dependencies configured for the current local path.
+The runnable path is local: .NET 9 API, React/TypeScript UI, Development-only demo identity or configured Entra JWT/role policies, TXT/HTML/DOCX/text-based PDF extraction, recursive chunking, Ollama chat/embeddings, PostgreSQL chunks and JSONB vectors, tenant-filtered cosine scoring in API memory, and Docker Compose. Original uploads are not retained, ingestion is synchronous, and the PostgreSQL retriever does not enforce document-level group ACLs. The API returns citations mapped to retrieved chunks; confidence remains `0`.
+
+Azure OpenAI/Semantic Kernel, Azure AI Search query, and Document Intelligence OCR adapters exist, but no complete Azure environment is provisioned. The Azure Search adapter has no index writer/lifecycle; Blob Storage and Service Bus clients are registered but not used by ingestion; and the Azure provider needs complete service wiring. Production-scale indexing, reliable background ingestion, calibrated confidence, scored evaluation, and production security/operations remain future work. `/health/ready` currently checks the configured local Ollama/PostgreSQL path, not general Azure readiness.
 
 **Runtime target:** the code targets .NET 9 because that was requested. .NET 9 support ended on May 12, 2026; move to .NET 10 LTS before production use or exposing the service publicly. The .NET 9 target is retained to match the original project constraint.
 
-## Architecture diagram
+## Current local runtime diagram
+
+```mermaid
+flowchart LR
+	U[User] --> SPA[React + TypeScript SPA]
+	SPA -->|upload / streamed query| API[ASP.NET Core API]
+	SPA -. configured sign-in .-> ENTRA[Entra ID / MSAL]
+	ENTRA -. bearer token .-> API
+	API -->|Development only| DEMO[Fixed local demo identity]
+	API --> EXTRACT[TXT / HTML / DOCX / text-PDF extraction]
+	EXTRACT --> CHUNK[Recursive chunking]
+	CHUNK --> API
+	API -->|embedding request| OLLAMA[Ollama]
+	OLLAMA -->|chunk vectors| API
+	API -->|persist chunks and vectors| PG[(PostgreSQL metadata + JSONB vectors)]
+	API -->|query embedding request| OLLAMA
+	OLLAMA -->|query vector| SEARCH[In-memory cosine top-K]
+	PG -->|tenant-scoped vectors| SEARCH
+	SEARCH -->|retrieved passages| API
+	API -->|grounded prompt and passages| OLLAMA
+	OLLAMA -->|answer + citation labels| API
+	API -->|final answer + citations| SPA
+	OCR[Azure Document Intelligence] -. optional OCR for scanned PDFs .-> EXTRACT
+```
+
+The local query retrieves candidate vectors for the current tenant, scores them in memory, and passes the top passages to the configured answer model. The diagram does not imply group-level authorization or a deployed cloud OCR service.
+
+## Future Azure target architecture (not deployed)
+
+The following diagram and request flow are a proposed production direction, not the current application wiring. Complete the index-write lifecycle, queue worker, authorization, and operational controls before treating this as an end-to-end design.
 
 ```mermaid
 flowchart LR
 	U[Employee / React SPA] -->|OIDC sign-in| ENTRA[Microsoft Entra ID]
 	U -->|Bearer token| FD[Azure Front Door Premium + WAF]
-	FD --> API[.NET 9 API on Azure Container Apps]
+	FD --> API[.NET 10 API on Azure Container Apps]
 	API --> AUTH[Entra JWT validation + app-role authorization]
 	API --> PG[(Azure Database for PostgreSQL Flexible Server)]
 	API --> BLOB[(Private Blob Storage / original files)]
@@ -38,14 +69,13 @@ flowchart LR
 	GH --> WEB[Static Web App or Storage static site]
 ```
 
-### Request flow
+### Proposed cloud request and ingestion flow
 
-1. React authenticates with Entra ID and requests an API access token. The API validates issuer, audience, tenant, lifetime, and signature; app roles authorize query and ingestion separately.
-2. The API derives tenant, subject, and groups from validated claims—not request-body fields. It rewrites/expands the question (bounded to a small configurable count), produces an embedding, and submits hybrid text+vector search with a mandatory tenant/ACL filter.
-3. Azure AI Search merges BM25 and vector candidates using RRF. Semantic ranker reranks the top candidates; a second application reranker and context filter remove irrelevant, duplicate, or unauthorized passages.
-4. Semantic Kernel calls the configured Azure OpenAI chat deployment with only the filtered evidence. The prompt requires source-grounded claims, explicit abstention when evidence is insufficient, and citations that refer only to retrieved chunk IDs.
-5. The response includes citations and a calibrated confidence value computed from retrieval/reranker evidence and coverage—not a model's self-reported confidence. Trace, token counts, deployment, latency, and cost estimate are recorded without logging raw prompt/document content by default.
-6. Document upload streams to private Blob Storage; a queue decouples extraction, chunking, embedding, indexing, retry, and dead-letter handling from the API request.
+1. The SPA signs in with Entra ID and requests an API token. The API validates issuer, audience, tenant, lifetime, and signature; API roles—not client-side visibility—authorize queries and ingestion.
+2. The API derives tenant, subject, and groups from validated claims. After a Search index writer is implemented, ingestion should store private originals, enqueue a durable job, extract/chunk/embed in a worker, and upsert ACL-bearing chunks into a versioned index.
+3. Search should apply mandatory tenant and document/group filters before returning candidates; hybrid lexical/vector retrieval and semantic ranking are design targets. The current Azure retriever is query-only and does not provide index lifecycle operations.
+4. A grounded generator should receive only permitted, filtered passages, cite stable retrieved chunk IDs, and abstain when evidence is insufficient. Calibrated confidence, query rewriting, reranking, and application context filtering are not implemented end to end.
+5. Instrument operations with privacy-safe traces and metrics, add cost controls and evaluation gates, and validate backup/recovery and service objectives before production rollout.
 
 ## Folder structure
 
@@ -65,74 +95,84 @@ flowchart LR
 └── Enterprise-RAG-Platform.csproj        # API host
 ```
 
-## Class diagram
+## Implemented code relationships
+
+This diagram shows the core local path and the available provider implementations. Query enhancement, dedicated reranking, and context-filter interfaces are not wired into the local orchestrator.
 
 ```mermaid
 classDiagram
+	class DocumentsController
 	class RagController
+	class IDocumentIngestionService {
+		<<interface>>
+		+IndexAsync(stream, fileName, contentType, securityContext) DocumentIndexResult
+	}
 	class IRagOrchestrator {
-	  <<interface>>
-	  +QueryAsync(RagQuery, RagSecurityContext) RagAnswer
-	}
-	class IQueryEnhancer {
-	  <<interface>>
-	  +RewriteAndExpandAsync(query) string[]
-	}
-	class IHybridRetriever {
-	  <<interface>>
-	  +SearchAsync(query, securityContext) RetrievedChunk[]
-	}
-	class IContextReranker {
-	  <<interface>>
-	  +RerankAsync(query, candidates) RetrievedChunk[]
-	}
-	class IContextFilter {
-	  <<interface>>
-	  +Filter(query, candidates) RetrievedChunk[]
-	}
-	class IGroundedAnswerGenerator {
-	  <<interface>>
-	  +GenerateAsync(query, evidence) RagAnswer
+		<<interface>>
+		+QueryAsync(query, securityContext) RagAnswer
 	}
 	class IDocumentTextExtractor {
-	  <<interface>>
-	  +ExtractAsync(stream, fileName) string
+		<<interface>>
+		+ExtractAsync(stream, fileName) string
 	}
 	class IDocumentChunker {
-	  <<interface>>
-	  +Chunk(document, text, target, overlap) DocumentChunk[]
+		<<interface>>
+		+Chunk(document, text, target, overlap) DocumentChunk[]
 	}
 	class IEmbeddingGenerator {
-	  <<interface>>
-	  +GenerateAsync(texts) vectors
+		<<interface>>
+		+GenerateAsync(texts) vectors
 	}
-	class KnowledgeDocument
-	class DocumentChunk
-	class RagAnswer
+	class IDocumentIndexStore {
+		<<interface>>
+		+SaveAsync(document, chunks, embeddings) documentId
+	}
+	class IHybridRetriever {
+		<<interface>>
+		+SearchAsync(query, securityContext) RetrievedChunk[]
+	}
+	class IGroundedAnswerGenerator {
+		<<interface>>
+		+GenerateAsync(query, evidence) RagAnswer
+	}
+	class DocumentIngestionService
+	class RagOrchestrator
+	class OllamaEmbeddingGenerator
+	class AzureOpenAIEmbeddingGenerator
+	class PostgresDocumentIndexStore
+	class PostgresVectorRetriever
+	class AzureAiSearchHybridRetriever
+	class OllamaGroundedAnswerGenerator
+	class SemanticKernelGroundedAnswerGenerator
+	DocumentsController --> IDocumentIngestionService
 	RagController --> IRagOrchestrator
-	IRagOrchestrator --> IQueryEnhancer
-	IRagOrchestrator --> IHybridRetriever
-	IRagOrchestrator --> IContextReranker
-	IRagOrchestrator --> IContextFilter
-	IRagOrchestrator --> IGroundedAnswerGenerator
-	IDocumentTextExtractor --> IDocumentChunker
-	IDocumentChunker --> DocumentChunk
-	IEmbeddingGenerator --> DocumentChunk
-	KnowledgeDocument "1" --> "many" DocumentChunk
-	IGroundedAnswerGenerator --> RagAnswer
+	DocumentIngestionService ..|> IDocumentIngestionService
+	DocumentIngestionService --> IDocumentTextExtractor
+	DocumentIngestionService --> IDocumentChunker
+	DocumentIngestionService --> IEmbeddingGenerator
+	DocumentIngestionService --> IDocumentIndexStore
+	RagOrchestrator ..|> IRagOrchestrator
+	RagOrchestrator --> IHybridRetriever
+	RagOrchestrator --> IGroundedAnswerGenerator
+	OllamaEmbeddingGenerator ..|> IEmbeddingGenerator
+	AzureOpenAIEmbeddingGenerator ..|> IEmbeddingGenerator
+	PostgresDocumentIndexStore ..|> IDocumentIndexStore
+	PostgresVectorRetriever ..|> IHybridRetriever
+	AzureAiSearchHybridRetriever ..|> IHybridRetriever
+	OllamaGroundedAnswerGenerator ..|> IGroundedAnswerGenerator
+	SemanticKernelGroundedAnswerGenerator ..|> IGroundedAnswerGenerator
 ```
 
 ## PostgreSQL schema and ownership
 
 `db/schema.sql` creates:
 
-- `documents`: tenant-scoped upload metadata, content hash, private Blob URI, ingestion status, and idempotency key.
-- `document_chunks`: chunk text, ordinal/page, and JSONB enrichment metadata. Search vectors are in Azure AI Search; PostgreSQL is the transactional metadata/audit source of truth.
-- `chat_sessions` and `chat_messages`: tenant/subject-scoped conversation state and citation payloads.
-- `evaluation_runs`: faithfulness, relevancy, context precision/recall, hallucination flag, evaluator version, and details.
-- `usage_events`: model deployment, operation, input/output token counts, trace ID, and estimated charge.
+- `documents`: tenant-scoped metadata, SHA-256, status, and a `blob_uri` field. The local uploader currently writes a `local://` identifier; it does not persist the original file in Blob Storage.
+- `document_chunks`: extracted chunk text, ordinal/page, JSONB metadata, and JSONB embeddings. The local retriever reads these vectors and scores them in application memory. Azure AI Search is not the current source of indexed chunks.
+- `chat_sessions` and `chat_messages`: tables for future conversation persistence; current query requests do not write chat history.
+- `evaluation_runs` and `usage_events`: tables for future quality and usage tracking; no current evaluation or token/cost ledger writes to them.
 
-Tenant isolation policies are enabled and forced for all tenant tables. Runtime code must set `SET LOCAL app.tenant_id` within each transaction only after validating identity claims. Run migrations with a separate owner; runtime identities must not own tables or bypass RLS. Back up PostgreSQL with PITR, encrypt at rest, and test restore procedures.
+Tenant isolation policies are enabled and forced for every table. Local PostgreSQL operations set `app.tenant_id` inside the database transaction; production deployments must validate identity claims before setting it, use a non-owner runtime role, and keep migrations under a separate owner. Back up PostgreSQL with PITR, encrypt at rest, and test restore procedures.
 
 ## Azure AI Search index contract
 
@@ -158,7 +198,7 @@ Use a versioned index (for example `knowledge-v1`) with fields: `chunkId` (key),
 
 - Entra ID OAuth2/OIDC: outside the explicit local demo mode, the API validates bearer tokens with Microsoft.Identity.Web and protects query calls with `Rag.Query`/`Rag.Admin` and document upload with `Rag.Ingest`/`Rag.Admin`. The React SPA uses MSAL with authorization-code/PKCE flows, silent token acquisition first, and popup interaction when consent or sign-in is required. Configure the real API audience, tenant restrictions, app roles (`Rag.Query`, `Rag.Ingest`, `Rag.Admin`), delegated SPA scope, and default-deny all data routes except health endpoints. Derive tenant/user/groups only from validated API claims. Frontend authorization is never a substitute for API authorization. Supply only public client ID, tenant ID, API scope, and API URL as `VITE_*` build settings; never put secrets there.
 - Local demo authentication: `LOCAL_DEMO_AUTH=true` selects a fixed `local-demo` identity only when `ASPNETCORE_ENVIRONMENT=Development`; it grants `Rag.Query` and `Rag.Ingest` without validating a token. Compose binds UI, API, and PostgreSQL to host loopback only. Do not enable this mode outside local development or expose these ports to an untrusted network. Set `LOCAL_DEMO_AUTH=false` to use Entra authentication.
-- Local model option: `Rag:Provider=Ollama` uses Ollama `/api/chat` and `/api/embed`; Compose reaches a host-installed Ollama service at `host.docker.internal:11434`. The local PostgreSQL prototype stores embeddings as JSONB and scans all chunks belonging to the authenticated tenant to calculate cosine similarity. This is intentionally for small development datasets, not production-scale vector retrieval. Use a dedicated vector index for production; maintain a fixed embedding model per index and re-index when it changes. `scripts/export_hf_amnesty_contexts.py` exports only retrieved context passages from the English v3 split of the Apache-2.0-tagged Hugging Face Amnesty QA dataset for a small local demo.
+- Local model option: `Rag:Provider=Ollama` uses Ollama `/api/chat` and `/api/embed`; Compose reaches a host-installed Ollama service at `host.docker.internal:11434`. The local PostgreSQL prototype stores vectors as JSONB and scans the current tenant's chunks to calculate cosine similarity in API memory. This is intentionally for small development datasets, not production-scale vector retrieval. The local retriever does not apply group/document ACL filters. Use a dedicated vector index for production; maintain a fixed embedding model per index and re-index when it changes. `scripts/export_hf_amnesty_contexts.py` exports only retrieved context passages from the English v3 split of the Apache-2.0-tagged Hugging Face Amnesty QA dataset for a small local demo.
 - Use managed identities for Container Apps to access Key Vault, Blob, Search, Azure OpenAI, Service Bus, ACR, and Monitor. Prefer data-plane RBAC; no shared keys in appsettings, images, GitHub variables, logs, or local commits. Use private endpoints/VNet integration, private DNS, TLS, WAF, and restricted CORS.
 - OpenTelemetry: instrument ASP.NET Core, HttpClient, database and queue operations; propagate W3C trace context across queue messages; export OTLP to Azure Monitor/Application Insights. Add low-cardinality metrics for request latency, retrieval counts, model token usage/cost, ingestion state, and evaluation scores. Never use tenant/user/document IDs as metric labels.
 - Cost controls: per-tenant quotas, upload/query rate limits, max query expansions, top-K and context token ceilings, model deployment limits, cache only permission-safe results, and alert on token spend/429s.
@@ -170,15 +210,15 @@ GitHub Actions should build/test the .NET solution and TypeScript app on every P
 
 Suggested environments: separate subscriptions or resource groups for dev/test/prod; hub/spoke VNet with private endpoints; Front Door Premium WAF; Container Apps environment with internal API ingress; private PostgreSQL Flexible Server; private Storage, Key Vault, Search and Service Bus; Azure Monitor workspace/Application Insights; ACR; Azure Policy and resource locks for production.
 
-## Step-by-step implementation plan
+## Step-by-step integration plan
 
-1. Confirm tenant model, data classification, file/size limits, expected throughput, residency, RPO/RTO, and model deployment availability; move target framework to supported .NET 10 LTS before production.
-2. Provision dev/test Azure resources with private networking, managed identities, Key Vault, Entra app roles, PostgreSQL, Blob, Service Bus, Search, Azure OpenAI chat/embedding deployments, and Monitor.
-3. Review the pinned package references for Semantic Kernel/Azure OpenAI, Azure AI Search, Azure Identity, Blob Storage, Service Bus, Npgsql, Microsoft.Identity.Web, Azure Monitor OpenTelemetry, Document Intelligence, OpenXML, and HTML parsing; keep dependency auditing enabled and refresh versions through package manager.
-4. Complete tenant claim mapping, RLS-aware PostgreSQL transactions, and authorization tests before production use. Query requires `Rag.Query`/`Rag.Admin`; upload requires `Rag.Ingest`/`Rag.Admin`; the SPA needs real app registration, delegated scope, roles, audience, and CORS configuration.
-5. The local prototype supports synchronous upload/indexing for DOCX, TXT, HTML, and selectable-text PDF (scanned/image-only PDF OCR requires Azure Document Intelligence), recursive chunking, Ollama embeddings, tenant-context-scoped PostgreSQL persistence, in-memory cosine-similarity retrieval, and grounded Qwen answers with citation-marker validation. Add malware scanning, signature validation, richer metadata, semantic chunking, background jobs, status/retry/dead-letter handling, and production-scale vector search before relying on it beyond small development corpora.
-6. Define and version Search index schema, embedding generation, ACL fields, indexer/upsert/delete adapters, hybrid/vector/keyword search, semantic ranking, rewrite/expansion, reranking, and context filtering.
-7. Implement Semantic Kernel grounded generation, server-side citation resolution, abstention, calibrated confidence, token/cost ledger, and conversation persistence.
-8. Create a versioned labeled evaluation dataset; implement all five evaluator metrics and block releases when agreed thresholds regress.
-9. Add OpenTelemetry spans/metrics/log correlation, dashboards, cost/latency/quality alerts, runbooks, load/security testing, and restore/failover exercises.
-10. Complete GitHub Actions OIDC CI/CD with staging gates and image digest promotion; deploy gradually behind Front Door and verify auth, tenant isolation, ingestion, retrieval, citations, cost, and SLOs.
+1. Confirm tenant model, data classification, file/size limits, throughput, residency, RPO/RTO, and model availability; move the application target to supported .NET 10 LTS before production.
+2. Provision isolated dev/test Azure resources with private networking, managed identities, Key Vault, Entra app roles, PostgreSQL, Blob, Service Bus, Search, Azure OpenAI chat/embedding deployments, Document Intelligence if OCR is needed, and Monitor.
+3. Complete Entra claim mapping and API authorization tests. Query requires `Rag.Query`/`Rag.Admin`; upload requires `Rag.Ingest`/`Rag.Admin`. Configure real SPA/API registrations, delegated scope, roles, audience, and CORS. Test cross-tenant access and do not assume the local PostgreSQL retriever enforces group ACLs.
+4. Finish provider wiring before selecting Azure OpenAI in production: configure `Rag:Provider=AzureOpenAI`, `AzureOpenAI:Endpoint`, `AzureOpenAI:ChatDeployment`, and `AzureOpenAI:EmbeddingDeployment`; provide a managed identity with least privilege; register Azure-compatible ingestion and orchestration services; and verify model/vector dimensions. The current DI path does not provide a complete Azure ingestion/query runtime.
+5. Provision a versioned Azure AI Search index with tenant/group ACL fields, semantic configuration, and a vector field matching the embedding dimensions. Implement chunk upsert, update, delete, reindex, and index-version migration; connect those operations to ingestion. The existing Search adapter only queries an index and is not an index writer.
+6. Add private Blob source storage and a queue-backed worker. Publish idempotent jobs, record lifecycle state, implement bounded retries/dead-letter handling, malware/signature checks, cancellation, and coordinated removal from Blob, PostgreSQL, and Search. Blob and Service Bus clients are currently registered but unused by application workflows.
+7. Extend beyond the local path with OCR as needed, retrieval tuning (hybrid search, reranking, context filters), server-side citation resolution, calibrated confidence, and conversation persistence. Keep capabilities feature-tested rather than assuming adapter presence implies end-to-end behavior.
+8. Create a versioned labeled evaluation set; implement faithfulness, relevancy, context precision/recall, and hallucination checks. Establish regression thresholds for changes to prompts, models, chunking, and indexes.
+9. Add privacy-safe OpenTelemetry traces/metrics, cost and latency controls, alerts, operational runbooks, load/security tests, backup/restore drills, and failover validation.
+10. Complete GitHub Actions OIDC CI/CD with staging gates, migration sequencing, immutable image promotion, and gradual rollout. Verify authorization, tenant isolation, ingestion, retrieval, citations, costs, and service objectives before production traffic.

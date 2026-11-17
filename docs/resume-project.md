@@ -1,32 +1,32 @@
 # Resume and portfolio wording
 
-Use the wording that matches the role and your own contribution. Keep the prototype/scale qualification visible; do not describe the target Azure architecture as a live production deployment.
+Keep the prototype and scale qualifications visible. Describe only work you personally performed, and do not present the Azure target design as a live production deployment.
 
 ## Resume entry
 
 **Enterprise RAG Platform | .NET 9, React, PostgreSQL, Ollama, Docker**
 
-- Built a full-stack local RAG prototype with a React/TypeScript workspace and ASP.NET Core API for multi-document ingestion, retrieval, and evidence-cited question answering; added per-file upload progress and streamed answer/status updates.
-- Implemented TXT, HTML, DOCX, and text-based PDF extraction, recursive overlapping chunking, Ollama embeddings, tenant-context-aware PostgreSQL persistence, and cosine-similarity top-K retrieval.
-- Added evidence-conditioned Qwen generation with server-side mapping of model source labels to retrieved chunk IDs and a top-ranked source fallback when the model omits citation syntax.
-- Added development-only local authentication, Entra/MSAL integration paths, API role policies, Docker Compose orchestration, readiness checks, and synthetic cross-format RAG validation documents.
+- Built a local-first RAG prototype with a React/TypeScript workspace and ASP.NET Core API for multi-document ingestion, retrieval, and evidence-cited question answering, including per-file upload results and streamed status/answer previews.
+- Implemented TXT, HTML, DOCX, and selectable-text PDF extraction, recursive overlapping chunks, Ollama embeddings, tenant-scoped PostgreSQL persistence, and in-memory cosine-similarity top-K retrieval for a small development corpus.
+- Added evidence-conditioned generation that maps model citation labels only to retrieved chunks; the Ollama path attaches its highest-ranked retrieved chunk when the model omits a citation. Confidence is currently a placeholder, not a quality score.
+- Added Development-only local authentication, Entra/MSAL and API role-policy integration paths, Docker Compose setup, readiness checks, and a fictional multi-format validation corpus.
 
 ## Short project summary
 
-Designed and built a local-first enterprise RAG prototype that ingests common business-document formats, embeds and indexes content, retrieves tenant-scoped evidence, and generates answers with verifiable source citations. The codebase uses clean-architecture boundaries and leaves a documented path toward Azure OpenAI and Azure AI Search, while clearly separating the runnable local implementation from production roadmap items.
+Designed and built a local RAG demonstration that takes common business documents through extraction, chunking, embedding, tenant-scoped retrieval, and grounded answer generation. The codebase separates API, application, domain, and infrastructure concerns and documents a path toward Azure OpenAI, Azure AI Search, Blob Storage, and queue-backed ingestion. Azure adapters are integration building blocks; the repository does not provision or deliver a complete Azure deployment.
 
 ## 30-second demo narrative
 
-> “This project demonstrates the end-to-end RAG lifecycle rather than just a chat prompt. I upload a policy or runbook, extract and recursively chunk its content, generate embeddings with a local Ollama model, and store chunks and vectors in PostgreSQL. At query time the API retrieves the nearest tenant-scoped chunks and passes only that evidence to the answer model. Citations are checked against the retrieved chunk IDs, and the system abstains if it cannot produce a valid citation. The current PostgreSQL cosine-search path is deliberately a small local prototype; Azure AI Search and production operations are documented as the next stage.”
+> “This project demonstrates the RAG lifecycle, not just a chat prompt. I upload a policy or runbook, extract and recursively chunk its text, create embeddings with Ollama, and store chunks and vectors in PostgreSQL. For a question, the API retrieves the closest chunks for the current tenant and sends only those passages to the answer model. The final response maps citations to retrieved evidence, while confidence remains uncalibrated. The local PostgreSQL cosine scan is intentionally a small-corpus demo; the Azure Search indexing lifecycle and production operations are next steps, not features I claim are already deployed.”
 
 ## Technical discussion points
 
-- **Why local models?** The Ollama adapter makes the demo runnable without an OpenAI API key and keeps model-provider concerns behind application interfaces.
-- **Why PostgreSQL?** It provides durable document/chunk storage for the local demo and avoids requiring a separate vector service at small scale. The current embedding scan is not presented as a production search design.
-- **Why citations by chunk ID?** The generator can only cite evidence supplied to the request, and the adapter filters returned markers to IDs actually present in retrieved context.
-- **What did you test?** The synthetic corpus exercises exact facts, cross-section policy rules, HTML cleanup, OCR boundaries, and missing-answer abstention. It is a manual validation corpus, not a scored quality benchmark.
-- **What is next?** Move to .NET 10 LTS; add scalable Azure AI Search indexing, background ingestion and lifecycle controls, security hardening, observability/cost tracking, calibrated confidence, and a versioned evaluation suite.
+- **Why local models?** Ollama makes the demonstration usable without an OpenAI API key and keeps provider implementations behind application interfaces.
+- **Why PostgreSQL?** It gives the local demo one durable store for metadata, chunks, and JSONB vectors. Candidate vectors are scored in API memory, so it is not a production vector-search design.
+- **What do citations guarantee?** They resolve to retrieved chunk IDs, not that every generated statement is correct. The local Ollama path falls back to the top-ranked retrieved chunk if the model provides no valid label; confidence is always `0` today.
+- **What was validated?** Fictional sample documents exercise exact facts, composed rules, HTML cleanup, OCR boundaries, and an intentionally unanswerable question. This is manual validation, not a scored benchmark.
+- **What is next?** Upgrade to .NET 10 LTS; complete identity and tenant-isolation tests; add Search indexing/upsert/delete; make ingestion durable with Blob Storage and a queue-backed worker; then add privacy-safe observability, cost controls, and a versioned evaluation suite.
 
 ## Do not claim yet
 
-Do not claim production Azure deployment, high availability, production-scale vector search, fully implemented hybrid/BM25/semantic ranking, semantic chunking, query rewriting, reranking, calibrated confidence, automated faithfulness/hallucination evaluation, or production-ready authorization/isolation. These are roadmap or architecture topics, not validated end-to-end capabilities of the current local demo.
+Do not claim a production Azure deployment, high availability, scalable vector search, complete Azure AI Search indexing, group-level ACL enforcement in the local retriever, asynchronous/retryable ingestion, malware scanning, semantic chunking, query rewriting, reranking, calibrated confidence, automated faithfulness evaluation, or production-ready authorization/isolation. These are roadmap topics, not validated end-to-end local-demo features. .NET 9 is out of support; target .NET 10 LTS before production use.
