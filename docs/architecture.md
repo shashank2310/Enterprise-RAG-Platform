@@ -2,11 +2,11 @@
 
 ## Scope and implementation status
 
-The runnable path is local: .NET 9 API, React/TypeScript UI, Development-only demo identity or configured Entra JWT/role policies, TXT/HTML/DOCX/text-based PDF extraction, recursive chunking, Ollama chat/embeddings, PostgreSQL chunks and JSONB vectors, tenant-filtered cosine scoring in API memory, and Docker Compose. Original uploads are not retained, ingestion is synchronous, and the PostgreSQL retriever does not enforce document-level group ACLs. The API returns citations mapped to retrieved chunks; confidence remains `0`.
+The runnable path is local: .NET 10 API, React/TypeScript UI, Development-only demo identity or configured Entra JWT/role policies, TXT/HTML/DOCX/text-based PDF extraction, recursive chunking, Ollama chat/embeddings, PostgreSQL chunks and JSONB vectors, tenant-filtered cosine scoring in API memory, and Docker Compose.
 
 Azure OpenAI/Semantic Kernel, Azure AI Search query, and Document Intelligence OCR adapters exist, but no complete Azure environment is provisioned. The Azure Search adapter has no index writer/lifecycle; Blob Storage and Service Bus clients are registered but not used by ingestion; and the Azure provider needs complete service wiring. Production-scale indexing, reliable background ingestion, calibrated confidence, scored evaluation, and production security/operations remain future work. `/health/ready` currently checks the configured local Ollama/PostgreSQL path, not general Azure readiness.
 
-**Runtime target:** the code targets .NET 9 because that was requested. .NET 9 support ended on May 12, 2026; move to .NET 10 LTS before production use or exposing the service publicly. The .NET 9 target is retained to match the original project constraint.
+**Runtime target:** all .NET projects, container images, and CI use .NET 10. Keep the SDK and runtime image major versions aligned when maintaining the project.
 
 ## Current local runtime diagram
 
@@ -212,7 +212,7 @@ Suggested environments: separate subscriptions or resource groups for dev/test/p
 
 ## Step-by-step integration plan
 
-1. Confirm tenant model, data classification, file/size limits, throughput, residency, RPO/RTO, and model availability; move the application target to supported .NET 10 LTS before production.
+1. Confirm tenant model, data classification, file/size limits, throughput, residency, RPO/RTO, and model availability; maintain the .NET 10 LTS target.
 2. Provision isolated dev/test Azure resources with private networking, managed identities, Key Vault, Entra app roles, PostgreSQL, Blob, Service Bus, Search, Azure OpenAI chat/embedding deployments, Document Intelligence if OCR is needed, and Monitor.
 3. Complete Entra claim mapping and API authorization tests. Query requires `Rag.Query`/`Rag.Admin`; upload requires `Rag.Ingest`/`Rag.Admin`. Configure real SPA/API registrations, delegated scope, roles, audience, and CORS. Test cross-tenant access and do not assume the local PostgreSQL retriever enforces group ACLs.
 4. Finish provider wiring before selecting Azure OpenAI in production: configure `Rag:Provider=AzureOpenAI`, `AzureOpenAI:Endpoint`, `AzureOpenAI:ChatDeployment`, and `AzureOpenAI:EmbeddingDeployment`; provide a managed identity with least privilege; register Azure-compatible ingestion and orchestration services; and verify model/vector dimensions. The current DI path does not provide a complete Azure ingestion/query runtime.

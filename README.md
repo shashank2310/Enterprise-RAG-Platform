@@ -1,6 +1,6 @@
 # Enterprise RAG Platform
 
-A local-first enterprise Retrieval-Augmented Generation (RAG) prototype built with .NET 9, React, PostgreSQL, and Ollama, with Azure OpenAI and Azure AI Search integration paths.
+A local-first enterprise Retrieval-Augmented Generation (RAG) prototype built with .NET 10, React, PostgreSQL, and Ollama, with Azure OpenAI and Azure AI Search integration paths.
 
 ## Current status
 
@@ -8,7 +8,7 @@ The runnable local path supports sequential multi-document upload (up to five fi
 
 Azure OpenAI/Semantic Kernel, Azure AI Search retrieval, Document Intelligence OCR, Entra/MSAL, and Azure Monitor have integration code or configuration paths at different levels of completeness. They do not form a provisioned, end-to-end Azure deployment: notably, Azure AI Search has no index writer/lifecycle adapter, Blob Storage and Service Bus clients are registered but not used by an ingestion workflow, and the Azure provider path still needs complete application-service wiring. Production hardening and formal evaluation remain roadmap work. See the [project showcase](docs/project-showcase.md), [resume and demo notes](docs/resume-project.md), and [architecture blueprint](docs/architecture.md).
 
-The code targets .NET 9 per the original project constraint. .NET 9 support ended on May 12, 2026; move to .NET 10 LTS before production use or public exposure.
+The API and application projects target .NET 10 LTS. The Azure integration paths remain prototypes and require the hardening described below before production use.
 
 ## GitHub showcase
 
@@ -26,7 +26,7 @@ py scripts/generate_showcase_deck.py
 
 ## Local development
 
-Prerequisites: .NET 9 SDK, Node.js 22, npm, Docker Compose, and Ollama installed on the host. The smaller Qwen model is a practical starting point for local hardware.
+Prerequisites: .NET 10 SDK, Node.js 22, npm, Docker Compose, and Ollama installed on the host. The smaller Qwen model is a practical starting point for local hardware.
 
 1. Start Ollama on the host and download the models in a separate PowerShell window:
 
@@ -91,4 +91,4 @@ No Azure resources or credentials are provisioned by this repository. The code c
 | Blob Storage / Service Bus | SDK clients can be registered with `DefaultAzureCredential` | Add source-file storage, durable job publishing/consumption, idempotency, retries, dead-letter handling, and deletion coordination; these clients are not currently used by ingestion. |
 | Azure Monitor | OpenTelemetry/Azure Monitor setup is enabled when a connection string is configured | Add privacy-safe traces, metrics, dashboards, alerts, and cost/quality instrumentation. |
 
-A sensible build-out order is: move to supported .NET 10 LTS; finish identity/tenant authorization tests; add the Search index writer and versioned schema; move originals to private Blob Storage; move parsing/indexing to a queue-backed worker; then add operational telemetry and a repeatable, scored evaluation suite. See the [architecture blueprint](docs/architecture.md) for the target design and implementation sequence. Use managed identities, private networking, least-privilege RBAC, and GitHub OIDC; never commit `.env`, secrets, tokens, or production connection strings.
+A sensible build-out order is: finish identity/tenant authorization tests; add the Search index writer and versioned schema; move originals to private Blob Storage; move parsing/indexing to a queue-backed worker; then add operational telemetry and a repeatable, scored evaluation suite.

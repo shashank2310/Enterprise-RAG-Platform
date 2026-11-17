@@ -12,7 +12,7 @@ A user uploads a document. The API extracts its text, divides it into overlappin
 
 | Area | Implemented local behavior |
 |---|---|
-| API | .NET 9 / ASP.NET Core controllers, dependency injection, liveness and readiness endpoints |
+| API | .NET 10 / ASP.NET Core controllers, dependency injection, liveness and readiness endpoints |
 | UI | React, TypeScript, Vite; multi-file selection, sequential upload, per-file outcomes, streamed status and answer text |
 | Extraction | TXT, HTML/HTM, DOCX, and selectable-text PDF; 20 MB per-file service limit. HTML script/style/noscript nodes are removed. |
 | Chunking | Recursive character-based chunks, target 1,200 characters with 180 characters of overlap |
@@ -67,7 +67,7 @@ Citations make supporting passages inspectable; they do not prove that the model
 
 ## Local demo
 
-Prerequisites: .NET 9 SDK, Node.js 22, Docker Compose, and Ollama installed on the host. .NET 9 is out of support (since May 12, 2026); the target must move to .NET 10 LTS before production use.
+Prerequisites: .NET 10 SDK, Node.js 22, Docker Compose, and Ollama installed on the host.
 
 1. In PowerShell, copy `.env.example` to `.env` and set a unique local `POSTGRES_PASSWORD`.
 2. Start Ollama and download the demo models:
@@ -95,7 +95,7 @@ Compose connects to host Ollama at `host.docker.internal:11434`. On Windows, the
 | **Azure Monitor / OpenTelemetry** | Azure Monitor OpenTelemetry setup is conditional on an Application Insights connection string. | Add privacy-safe traces across API, model, database, and queue; low-cardinality metrics for latency, failures, token usage, ingestion status, and quality; dashboards and alerts. Do not log prompts, document text, or tenant identifiers as metric dimensions. |
 | **Evaluation and quality** | Synthetic multi-format documents and suggested questions support manual checks; evaluation schema/contracts exist. | Create a versioned golden set, implement faithfulness/relevancy/context metrics, compare retrieval and answer behavior across model/index changes, and set release thresholds. Do not treat the sample corpus as a scored benchmark. |
 
-Recommended delivery order: (1) upgrade to .NET 10 LTS and finish auth/tenant isolation tests; (2) implement an Azure AI Search indexing lifecycle and keep index/embedding versions aligned; (3) persist originals in Blob and move heavy ingestion behind Service Bus; (4) add monitoring, cost controls, and recovery runbooks; (5) establish a scored evaluation gate. Keep each integration behind the existing application interfaces where practical, and validate the complete path in an isolated non-production Azure environment before rollout.
+Recommended delivery order: (1) finish auth and tenant-isolation tests; (2) implement an Azure AI Search indexing lifecycle and keep index/embedding versions aligned; (3) persist originals in Blob and move heavy ingestion behind Service Bus; (4) add monitoring, cost controls, and recovery runbooks; (5) establish a scored evaluation gate.
 
 ## Validation walkthrough
 

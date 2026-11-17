@@ -146,7 +146,7 @@ def make_deck():
     pill(s, 0.82, 0.82, 2.15, "LOCAL-FIRST  /  EVIDENCE-GROUNDED", TEAL, NAVY, 9)
     text(s, 0.82, 1.55, 7.3, 1.5, "Enterprise RAG\nPlatform", 38, WHITE, True)
     text(s, 0.86, 3.4, 6.7, 0.8, "Grounded answers.\nTraceable evidence.", 22, "D5E1F0", False)
-    text(s, 0.86, 5.55, 7.4, 0.35, ".NET 9 prototype  |  React + TypeScript  |  PostgreSQL  |  Ollama", 11, CYAN, True)
+    text(s, 0.86, 5.55, 7.4, 0.35, ".NET 10  |  React + TypeScript  |  PostgreSQL  |  Ollama", 11, CYAN, True)
     text(s, 0.86, 6.15, 7.8, 0.25, "github.com/shashank2310/Enterprise-RAG-Platform", 10, "A9B8CB")
     # Floating evidence cards
     rect(s, 8.75, 1.28, 3.25, 0.78, WHITE)
@@ -315,9 +315,9 @@ def make_deck():
     s = new_slide(prs, True)
     text(s, 0.72, 0.42, 11.9, 0.24, "10 / ROADMAP", 10, TEAL, True)
     text(s, 0.72, 0.8, 12, 0.55, "The path from local demo to production platform", 25, WHITE, True)
-    text(s, 0.74, 1.44, 11.8, 0.38, "A deliberate sequence: supported runtime, scalable retrieval, then measurable operations and quality.", 12, "B8C6D9")
+    text(s, 0.74, 1.44, 11.8, 0.38, "The runtime is current; next comes secure, scalable retrieval and measurable operations.", 12, "B8C6D9")
     roadmap = [
-        ("01", ".NET 10 LTS", "Move off the unsupported .NET 9 target.", TEAL),
+        ("01", "Tenant security", "Complete identity mapping and cross-tenant authorization tests.", TEAL),
         ("02", "Search at scale", "Azure AI Search lifecycle, hybrid retrieval, ACL filters.", CYAN),
         ("03", "Reliable ingestion", "Background jobs, retries, malware checks, source storage.", LIME),
         ("04", "Trust + operations", "Calibrated confidence, evaluation suite, tracing and cost.", ORANGE),
@@ -338,7 +338,7 @@ def make_deck():
     rect(s, 0.8, 2.2, 7.3, 3.45, NAVY, True)
     text(s, 1.16, 2.54, 6.45, 0.32, "PROJECT TAKEAWAY", 10, TEAL, True)
     text(s, 1.16, 3.02, 6.45, 1.24, "Full-stack local RAG prototype with document ingestion, vector retrieval, grounded generation, and verifiable citations.", 23, WHITE, True)
-    text(s, 1.16, 4.72, 6.4, 0.48, ".NET 9 prototype  /  React  /  PostgreSQL  /  Ollama  /  Docker", 11, CYAN, True)
+    text(s, 1.16, 4.72, 6.4, 0.48, ".NET 10  /  React  /  PostgreSQL  /  Ollama  /  Docker", 12, CYAN, True)
     card(s, 8.48, 2.2, 4.0, 1.35, "GitHub repository", "github.com/shashank2310/Enterprise-RAG-Platform", TEAL, WHITE, 14, 10)
     card(s, 8.48, 3.87, 4.0, 1.35, "Demo corpus", "samples/rag-validation/", CYAN, WHITE, 14, 11)
     text(s, 8.55, 5.62, 3.85, 0.4, "See the README for setup;\nsee project-showcase.md for details.", 10, MUTED)
