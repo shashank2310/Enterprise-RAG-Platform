@@ -2,6 +2,10 @@
 
 A local-first enterprise Retrieval-Augmented Generation (RAG) prototype built with .NET 10, React, PostgreSQL, and Ollama, with Azure OpenAI and Azure AI Search integration paths.
 
+## Demo Link Youtube
+
+https://youtu.be/3zMt_qv4LxU
+
 ## Current status
 
 The runnable local path supports sequential multi-document upload (up to five files per selection), TXT/HTML/DOCX/text-PDF extraction, recursive chunking, Ollama embeddings and chat, tenant-scoped PostgreSQL persistence, cosine-similarity retrieval, live status events, streamed answer text, and final citations mapped to retrieved chunks. The original uploaded file is not retained by the local ingestion path. PostgreSQL vectors are scanned and scored in application memory, so this is a small-corpus prototype—not production-scale search or a complete tenant/ACL security design.
